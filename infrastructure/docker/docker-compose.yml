@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Database: PostgreSQL 16 + PostGIS extension
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: climax-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: climax_user
+      POSTGRES_PASSWORD: climax_dev_password
+      POSTGRES_DB: climax_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/0001_initial_schema.sql:/docker-entrypoint-initdb.d/0001_initial_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U climax_user -d climax_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend: FastAPI
+  api:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.api
+    container_name: climax-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../../.env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=climax_user
+      - DB_PASSWORD=climax_dev_password
+      - DB_NAME=climax_db
+    volumes:
+      - ../../apps/api:/app/apps/api
+      - ../../services:/app/services
+
+  # Frontend: Next.js
+  web:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.web
+    container_name: climax-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    volumes:
+      - ../../apps/web:/app/apps/web
+
+volumes:
+  postgres_data:

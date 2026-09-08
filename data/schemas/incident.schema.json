@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Incident",
+  "description": "Municipal operational incident requiring field investigation or mitigation",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "organization_id": { "type": "string", "format": "uuid" },
+    "title": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["OPEN", "INVESTIGATING", "DISPATCHED", "MITIGATED", "RESOLVED", "DISMISSED"]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["LOW", "MODERATE", "HIGH", "VERY_HIGH", "CRITICAL"]
+    },
+    "category": { "type": "string" },
+    "location": {
+      "type": "object",
+      "properties": {
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" }
+      },
+      "required": ["latitude", "longitude"]
+    },
+    "assigned_officer_id": { "type": ["string", "null"] },
+    "risk_score": { "type": ["number", "null"] },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "required": ["id", "organization_id", "title", "status", "severity", "category", "location", "created_at"]
+}

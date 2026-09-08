@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EnvironmentalObservation",
+  "description": "Direct physical observation recorded by an IoT sensor or reference monitor",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "sensor_id": { "type": "string", "format": "uuid" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "tier": { "type": "string", "enum": ["OBSERVED"] },
+    "pm25": { "type": "number", "minimum": 0 },
+    "pm10": { "type": "number", "minimum": 0 },
+    "no2": { "type": "number", "minimum": 0 },
+    "so2": { "type": "number", "minimum": 0 },
+    "co": { "type": "number", "minimum": 0 },
+    "o3": { "type": "number", "minimum": 0 },
+    "aqi": { "type": "number", "minimum": 0, "maximum": 500 },
+    "temperature_c": { "type": "number" },
+    "humidity_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+    "wind_speed_kmh": { "type": "number", "minimum": 0 },
+    "wind_direction_deg": { "type": "number", "minimum": 0, "maximum": 360 }
+  },
+  "required": ["id", "sensor_id", "timestamp", "tier"]
+}

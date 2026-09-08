@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Prediction",
+  "description": "Forward-looking spatio-temporal atmospheric prediction",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "sensor_id": { "type": ["string", "null"] },
+    "target_location": {
+      "type": "object",
+      "properties": {
+        "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+        "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+      },
+      "required": ["latitude", "longitude"]
+    },
+    "forecast_timestamp": { "type": "string", "format": "date-time" },
+    "horizon_hours": { "type": "integer", "enum": [6, 24, 72] },
+    "tier": { "type": "string", "enum": ["PREDICTED"] },
+    "predicted_pm25": { "type": "number", "minimum": 0 },
+    "predicted_aqi": { "type": "number", "minimum": 0, "maximum": 500 },
+    "confidence_interval_low": { "type": "number" },
+    "confidence_interval_high": { "type": "number" },
+    "explanation": { "type": "object" }
+  },
+  "required": [
+    "id",
+    "target_location",
+    "forecast_timestamp",
+    "horizon_hours",
+    "tier",
+    "predicted_pm25",
+    "predicted_aqi",
+    "confidence_interval_low",
+    "confidence_interval_high",
+    "explanation"
+  ]
+}

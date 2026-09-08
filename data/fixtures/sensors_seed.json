@@ -1,0 +1,30 @@
+[
+  {
+    "id": "sn-cpcb-anand-vihar-ref",
+    "data_source_id": "ds-gov-cpcb-feed",
+    "external_sensor_id": "CPCB_DL_001",
+    "sensor_type": "GOVERNMENT_STATION",
+    "model_name": "MetOne BAM-1020 Continuous Monitor",
+    "location": {
+      "latitude": 28.6508,
+      "longitude": 77.3152,
+      "altitude_m": 215.0
+    },
+    "is_calibrated": true,
+    "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-anand-vihar-04",
+    "data_source_id": "ds-iot-community-mesh",
+    "external_sensor_id": "IOT_DEL_AV_04",
+    "sensor_type": "IOT_LOW_COST",
+    "model_name": "Plantower PMS5003 + SHT31 Mesh Node",
+    "location": {
+      "latitude": 28.6472,
+      "longitude": 77.3018,
+      "altitude_m": 210.0
+    },
+    "is_calibrated": true,
+    "is_active": true
+  }
+]

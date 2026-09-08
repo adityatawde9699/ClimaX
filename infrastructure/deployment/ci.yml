@@ -1,0 +1,54 @@
+name: ClimaX CI Quality Gate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate-scaffolding:
+    name: Verify Architectural Hygiene & Scaffolding
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ruff & dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest
+
+      - name: Python Linting with Ruff
+        run: ruff check apps/api services
+
+      - name: Verify Architecture Scaffolding
+        run: python3 scripts/verify-scaffolding.py
+
+  validate-frontend:
+    name: Verify Web & Types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Typecheck Types Package
+        run: npm --prefix packages/types run typecheck
+
+      - name: Typecheck UI Package
+        run: npm --prefix packages/ui run typecheck
+
+      - name: Typecheck Utils Package
+        run: npm --prefix packages/utils run typecheck

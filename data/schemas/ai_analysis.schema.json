@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AIAnalysis",
+  "description": "Standardized AI inference payload with explainable evidence and trust indicators",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "report_id": { "type": ["string", "null"] },
+    "observation_id": { "type": ["string", "null"] },
+    "tier": { "type": "string", "enum": ["INFERRED"] },
+    "classification": { "type": "string" },
+    "explanation": {
+      "type": "object",
+      "properties": {
+        "result": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "confidence_tier": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "data_sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "model": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "verification_status": {
+          "type": "string",
+          "enum": ["UNVERIFIED", "FIELD_VERIFIED", "REJECTED", "DISPUTED"]
+        }
+      },
+      "required": [
+        "result",
+        "confidence",
+        "confidence_tier",
+        "evidence",
+        "data_sources",
+        "model",
+        "timestamp",
+        "verification_status"
+      ]
+    },
+    "suggested_severity": {
+      "type": "string",
+      "enum": ["LOW", "MODERATE", "HIGH", "VERY_HIGH", "CRITICAL"]
+    }
+  },
+  "required": ["id", "tier", "classification", "explanation", "suggested_severity"]
+}

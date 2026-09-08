@@ -1,0 +1,32 @@
+{
+  "name": "climax-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ClimaX — Federated AI Environmental Intelligence & Action Platform",
+  "author": "ClimaX Core Team",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "cd apps/api && uvicorn main:app --reload --port 8000",
+    "build:web": "npm --prefix apps/web run build",
+    "lint:web": "npm --prefix apps/web run lint",
+    "lint:api": "ruff check apps/api services",
+    "format:api": "ruff format apps/api services",
+    "typecheck:web": "npm --prefix apps/web run typecheck",
+    "typecheck:packages": "npm --prefix packages/types run build",
+    "verify:scaffolding": "python3 scripts/verify-scaffolding.py",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules .next"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

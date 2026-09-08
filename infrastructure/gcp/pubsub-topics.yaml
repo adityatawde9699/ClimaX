@@ -1,0 +1,21 @@
+# Google Cloud Pub/Sub Streaming Topics & Subscriptions Configuration
+topics:
+  - name: sensor-ingest
+    messageRetentionDuration: "604800s" # 7 days
+    subscriptions:
+      - name: sensor-ingest-to-db-sub
+        ackDeadlineSeconds: 30
+      - name: sensor-ingest-to-bigquery-sub
+        ackDeadlineSeconds: 60
+
+  - name: citizen-reports
+    messageRetentionDuration: "604800s"
+    subscriptions:
+      - name: report-gemini-multimodal-sub
+        ackDeadlineSeconds: 120
+
+  - name: alert-dispatch
+    messageRetentionDuration: "86400s" # 1 day
+    subscriptions:
+      - name: alert-fcm-push-sub
+        ackDeadlineSeconds: 20

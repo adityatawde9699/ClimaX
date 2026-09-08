@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CitizenReport",
+  "description": "Citizen uploaded pollution report with optional photo/video evidence",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "user_id": { "type": ["string", "null"] },
+    "tier": { "type": "string", "enum": ["OBSERVED"] },
+    "location": {
+      "type": "object",
+      "properties": {
+        "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+        "longitude": { "type": "number", "minimum": -180, "maximum": 180 }
+      },
+      "required": ["latitude", "longitude"]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "BIOMASS_BURNING",
+        "INDUSTRIAL_EMISSION",
+        "VEHICULAR_CONGESTION",
+        "CONSTRUCTION_DUST",
+        "WASTE_INCINERATION",
+        "BRICK_KILN",
+        "ROAD_DUST",
+        "FIRE_INCIDENT",
+        "HAZARDOUS_CHEMICAL",
+        "OTHER"
+      ]
+    },
+    "description": { "type": "string", "minLength": 5 },
+    "media_urls": {
+      "type": "array",
+      "items": { "type": "string", "format": "uri" }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["SUBMITTED", "TRIAGED", "VERIFIED", "RESOLVED"]
+    }
+  },
+  "required": ["id", "tier", "location", "category", "description", "status"]
+}
