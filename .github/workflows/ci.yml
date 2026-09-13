@@ -1,0 +1,48 @@
+name: ClimaX CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: climax_user
+          POSTGRES_PASSWORD: climax_dev_password
+          POSTGRES_DB: climax_db
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U climax_user -d climax_db"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://climax_user:climax_dev_password@localhost:5432/climax_db
+      DATABASE_SYNC_URL: postgresql+psycopg2://climax_user:climax_dev_password@localhost:5432/climax_db
+      RUN_DATABASE_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -e ".[dev]"
+      - run: ruff check apps/api services scripts tests infrastructure/database/alembic
+      - run: alembic -c infrastructure/database/alembic.ini upgrade head
+      - run: python scripts/seed-db.py --env development
+      - run: python scripts/benchmark-spatial.py
+      - run: pytest tests --cov=apps/api/services --cov-fail-under=80
+      - run: alembic -c infrastructure/database/alembic.ini downgrade -1
+      - run: alembic -c infrastructure/database/alembic.ini upgrade head
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20, cache: npm}
+      - run: npm ci
+      - run: npm run typecheck:packages
+      - run: npm --prefix packages/ui run typecheck
+      - run: npm --prefix packages/utils run typecheck
+      - run: npm run typecheck:web
+      - run: npm run build:web

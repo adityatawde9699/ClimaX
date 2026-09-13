@@ -8,7 +8,9 @@ from abc import ABC, abstractmethod
 
 class IMetricsCollector(ABC):
     @abstractmethod
-    def record_ai_inference(self, model_name: str, latency_ms: float, token_count: int, success: bool) -> None:
+    def record_ai_inference(
+        self, model_name: str, latency_ms: float, token_count: int, success: bool
+    ) -> None:
         pass
 
     @abstractmethod

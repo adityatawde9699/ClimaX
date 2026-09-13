@@ -41,9 +41,41 @@ services:
       - DB_USER=climax_user
       - DB_PASSWORD=climax_dev_password
       - DB_NAME=climax_db
+      - DATABASE_URL=postgresql+asyncpg://climax_user:climax_dev_password@postgres:5432/climax_db
+      - DATABASE_SYNC_URL=postgresql+psycopg2://climax_user:climax_dev_password@postgres:5432/climax_db
     volumes:
       - ../../apps/api:/app/apps/api
       - ../../services:/app/services
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  redis:
+    image: redis:7-alpine
+    container_name: climax-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: climax-pgadmin
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@climax.local
+      PGADMIN_DEFAULT_PASSWORD: climax_dev_password
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # Frontend: Next.js
   web:
@@ -53,7 +85,8 @@ services:
     container_name: climax-web
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     ports:
       - "3000:3000"
     environment:

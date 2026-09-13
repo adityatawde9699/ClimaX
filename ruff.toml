@@ -16,7 +16,11 @@ select = [
 ignore = [
     "E501", # Line too long (handled by formatter)
     "B008", # Do not perform function calls in argument defaults (FastAPI Depends)
+    "UP042", # Keep str + Enum contracts compatible with Pydantic/OpenAPI
 ]
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["F401"]
 
 [lint.isort]
 known-first-party = ["apps", "services", "core", "api", "models", "schemas"]

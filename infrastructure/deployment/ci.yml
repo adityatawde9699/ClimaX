@@ -10,6 +10,22 @@ jobs:
   validate-scaffolding:
     name: Verify Architectural Hygiene & Scaffolding
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: climax_user
+          POSTGRES_PASSWORD: climax_dev_password
+          POSTGRES_DB: climax_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U climax_user -d climax_db"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://climax_user:climax_dev_password@localhost:5432/climax_db
+      DATABASE_SYNC_URL: postgresql+psycopg2://climax_user:climax_dev_password@localhost:5432/climax_db
+      RUN_DATABASE_TESTS: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -18,16 +34,28 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Ruff & dependencies
+      - name: Install project dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff pytest
+          pip install -e ".[dev]"
+
+      - name: Verify migrations upgrade and downgrade
+        run: |
+          alembic -c infrastructure/database/alembic.ini upgrade head
+          alembic -c infrastructure/database/alembic.ini downgrade -1
+          alembic -c infrastructure/database/alembic.ini upgrade head
 
       - name: Python Linting with Ruff
         run: ruff check apps/api services
 
       - name: Verify Architecture Scaffolding
         run: python3 scripts/verify-scaffolding.py
+
+      - name: Seed and test API
+        run: |
+          python scripts/seed-db.py --env development
+          python scripts/benchmark-spatial.py
+          pytest tests/ --cov=apps/api/services --cov-fail-under=80
 
   validate-frontend:
     name: Verify Web & Types

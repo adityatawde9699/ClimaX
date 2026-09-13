@@ -28,9 +28,17 @@ fi
 echo "Activating virtual environment..."
 source .venv/bin/activate
 
-# 3. Verify scaffolding
+# 3. Install local dependencies
+echo "Installing Python development dependencies..."
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+
+echo "Installing workspace dependencies..."
+npm install
+
+# 4. Verify scaffolding
 echo "Running scaffolding verification..."
 python3 scripts/verify-scaffolding.py
 
 echo ""
-echo "Setup complete! ClimaX is primed for Phase 1 development."
+echo "Setup complete! Start local services with: cd infrastructure/docker && docker compose up -d --build"

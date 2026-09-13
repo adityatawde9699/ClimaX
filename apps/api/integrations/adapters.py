@@ -5,7 +5,7 @@ Implementations scheduled for Phase 3 (Data), Phase 5 (Gemini), and Phase 6 (Ver
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 
 class IGCPStorageAdapter(ABC):
@@ -16,23 +16,27 @@ class IGCPStorageAdapter(ABC):
 
 class IGeminiVisionAdapter(ABC):
     @abstractmethod
-    async def analyze_multimodal_incident(self, media_uri: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    async def analyze_multimodal_incident(
+        self, media_uri: str, metadata: dict[str, Any]
+    ) -> dict[str, Any]:
         pass
 
 
 class IVertexAIPredictionAdapter(ABC):
     @abstractmethod
-    async def query_plume_prediction(self, features: Dict[str, Any]) -> Dict[str, Any]:
+    async def query_plume_prediction(self, features: dict[str, Any]) -> dict[str, Any]:
         pass
 
 
 class IEarthEngineAdapter(ABC):
     @abstractmethod
-    async def fetch_sentinel5p_raster(self, bbox: List[float], date_range: List[str]) -> Dict[str, Any]:
+    async def fetch_sentinel5p_raster(
+        self, bbox: list[float], date_range: list[str]
+    ) -> dict[str, Any]:
         pass
 
 
 class IWeatherAdapter(ABC):
     @abstractmethod
-    async def get_current_meteorology(self, lat: float, lng: float) -> Dict[str, Any]:
+    async def get_current_meteorology(self, lat: float, lng: float) -> dict[str, Any]:
         pass

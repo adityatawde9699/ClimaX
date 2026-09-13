@@ -4,8 +4,9 @@ Defines contracts for Gemini Multimodal processing, Environmental Reasoning, and
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
-from schemas.ai import AIExplanationSchema, PollutionCategory
+from typing import Any
+
+from schemas.ai import AIExplanationSchema
 
 
 class IMultimodalReportAnalyzer(ABC):
@@ -13,11 +14,7 @@ class IMultimodalReportAnalyzer(ABC):
 
     @abstractmethod
     async def analyze(
-        self,
-        image_bytes: bytes,
-        latitude: float,
-        longitude: float,
-        citizen_text: str
+        self, image_bytes: bytes, latitude: float, longitude: float, citizen_text: str
     ) -> AIExplanationSchema:
         pass
 
@@ -28,9 +25,9 @@ class IEnvironmentalReasoningEngine(ABC):
     @abstractmethod
     async def reason_about_hotspot(
         self,
-        sensor_data: Dict[str, Any],
-        wind_vector: Dict[str, Any],
-        nearby_industries: Dict[str, Any]
+        sensor_data: dict[str, Any],
+        wind_vector: dict[str, Any],
+        nearby_industries: dict[str, Any],
     ) -> AIExplanationSchema:
         pass
 
@@ -40,10 +37,6 @@ class IAICopilotService(ABC):
 
     @abstractmethod
     async def answer_query(
-        self,
-        session_id: str,
-        user_role: str,
-        query: str,
-        context_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, session_id: str, user_role: str, query: str, context_data: dict[str, Any]
+    ) -> dict[str, Any]:
         pass

@@ -5,7 +5,8 @@ Defines the Pydantic DTO contracts for all 16 domain entities.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from schemas.ai import (
@@ -61,8 +62,20 @@ class UserBase(BaseModel):
     email: str
     full_name: str
     role: UserRole = UserRole.CITIZEN
-    organization_id: Optional[str] = None
+    organization_id: str | None = None
     preferred_language: str = "en"
+
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=12, max_length=72)
+
+
+class UserUpdate(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=255)
+    role: UserRole | None = None
+    organization_id: str | None = None
+    preferred_language: str | None = Field(default=None, min_length=2, max_length=10)
+    is_active: bool | None = None
 
 
 class UserRead(UserBase):
@@ -102,24 +115,24 @@ class SensorRead(BaseModel):
     location: CoordinatesDTO
     is_calibrated: bool
     is_active: bool
-    last_ping_at: Optional[datetime] = None
+    last_ping_at: datetime | None = None
 
 
 # 5. EnvironmentalObservation DTOs
 class EnvironmentalObservationCreate(BaseModel):
     sensor_id: str
     timestamp: datetime
-    pm25: Optional[float] = None
-    pm10: Optional[float] = None
-    no2: Optional[float] = None
-    so2: Optional[float] = None
-    co: Optional[float] = None
-    o3: Optional[float] = None
-    aqi: Optional[float] = None
-    temperature_c: Optional[float] = None
-    humidity_percent: Optional[float] = None
-    wind_speed_kmh: Optional[float] = None
-    wind_direction_deg: Optional[float] = None
+    pm25: float | None = None
+    pm10: float | None = None
+    no2: float | None = None
+    so2: float | None = None
+    co: float | None = None
+    o3: float | None = None
+    aqi: float | None = None
+    temperature_c: float | None = None
+    humidity_percent: float | None = None
+    wind_speed_kmh: float | None = None
+    wind_direction_deg: float | None = None
 
 
 class EnvironmentalObservationRead(EnvironmentalObservationCreate):
@@ -131,31 +144,31 @@ class EnvironmentalObservationRead(EnvironmentalObservationCreate):
 # 6. CitizenReport DTOs
 class CitizenReportCreate(BaseModel):
     location: CoordinatesDTO
-    address_text: Optional[str] = None
+    address_text: str | None = None
     category: PollutionCategory
     description: str
-    media_urls: List[str] = Field(default_factory=list)
+    media_urls: list[str] = Field(default_factory=list)
 
 
 class CitizenReportRead(BaseModel):
     id: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
     tier: InformationTier = InformationTier.OBSERVED
     location: CoordinatesDTO
-    address_text: Optional[str] = None
+    address_text: str | None = None
     category: PollutionCategory
     description: str
-    media_urls: List[str]
+    media_urls: list[str]
     status: str
-    incident_id: Optional[str] = None
+    incident_id: str | None = None
     created_at: datetime
 
 
 # 7. AIAnalysis DTOs
 class AIAnalysisRead(BaseModel):
     id: str
-    report_id: Optional[str] = None
-    observation_id: Optional[str] = None
+    report_id: str | None = None
+    observation_id: str | None = None
     tier: InformationTier = InformationTier.INFERRED
     classification: PollutionCategory
     explanation: AIExplanationSchema
@@ -169,8 +182,8 @@ class PollutionEventRead(BaseModel):
     event_type: str
     tier: InformationTier
     start_time: datetime
-    end_time: Optional[datetime] = None
-    peak_pm25: Optional[float] = None
+    end_time: datetime | None = None
+    peak_pm25: float | None = None
     affected_radius_meters: float
     severity: IncidentSeverity
     created_at: datetime
@@ -179,7 +192,7 @@ class PollutionEventRead(BaseModel):
 # 9. Prediction DTOs
 class PredictionRead(BaseModel):
     id: str
-    sensor_id: Optional[str] = None
+    sensor_id: str | None = None
     target_location: CoordinatesDTO
     forecast_timestamp: datetime
     horizon_hours: int
@@ -210,14 +223,14 @@ class AlertCreate(BaseModel):
     message: str
     severity: IncidentSeverity
     channel: AlertChannel
-    affected_radius_m: Optional[float] = None
+    affected_radius_m: float | None = None
 
 
 class AlertRead(AlertCreate):
     id: str
     is_dispatched: bool
-    dispatched_at: Optional[datetime] = None
-    expires_at: Optional[datetime] = None
+    dispatched_at: datetime | None = None
+    expires_at: datetime | None = None
     created_at: datetime
 
 
@@ -227,17 +240,17 @@ class IncidentCreate(BaseModel):
     severity: IncidentSeverity
     category: PollutionCategory
     location: CoordinatesDTO
-    assigned_officer_id: Optional[str] = None
+    assigned_officer_id: str | None = None
 
 
 class IncidentRead(IncidentCreate):
     id: str
     organization_id: str
     status: IncidentStatus
-    risk_score: Optional[float] = None
-    ai_analysis_id: Optional[str] = None
+    risk_score: float | None = None
+    ai_analysis_id: str | None = None
     created_at: datetime
-    resolved_at: Optional[datetime] = None
+    resolved_at: datetime | None = None
 
 
 # 13. Verification DTOs
@@ -245,7 +258,7 @@ class VerificationCreate(BaseModel):
     incident_id: str
     status: VerificationStatus
     official_notes: str
-    field_photos: List[str] = Field(default_factory=list)
+    field_photos: list[str] = Field(default_factory=list)
 
 
 class VerificationRead(VerificationCreate):
@@ -266,8 +279,8 @@ class InterventionCreate(BaseModel):
 class InterventionRead(InterventionCreate):
     id: str
     dispatched_at: datetime
-    executed_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    executed_at: datetime | None = None
+    completed_at: datetime | None = None
 
 
 # 15. InterventionMeasurement DTOs
@@ -285,10 +298,10 @@ class InterventionMeasurementRead(BaseModel):
 # 16. AuditLog DTOs
 class AuditLogRead(BaseModel):
     id: str
-    user_id: Optional[str] = None
+    user_id: str | None = None
     action: str
     entity_name: str
     entity_id: str
-    ip_address: Optional[str] = None
-    changes: Optional[Dict[str, Any]] = None
+    ip_address: str | None = None
+    changes: dict[str, Any] | None = None
     timestamp: datetime

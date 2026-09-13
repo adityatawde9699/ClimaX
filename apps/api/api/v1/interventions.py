@@ -1,27 +1,53 @@
-"""
-Interventions API Router — /api/v1/interventions
-Boundary for municipal pollution interventions and pre/post impact delta tracking.
-Implementation scheduled for Phase 11.
-"""
+from datetime import UTC, datetime
+from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, status
-from schemas.entities import InterventionCreate, InterventionRead, InterventionMeasurementRead
-from schemas.base import ApiResponse, PaginatedResponse
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from security.jwt import require_roles
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.database import get_db
+from models.entities import Intervention, User
+from schemas.base import ApiResponse
+from schemas.entities import InterventionCreate, InterventionRead
 
 router = APIRouter(prefix="/interventions", tags=["Interventions & Impact"])
 
 
-@router.post("/", response_model=ApiResponse[InterventionRead], summary="Record a municipal intervention")
-async def record_intervention(intervention: InterventionCreate):
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Phase 0: Architecture scaffolding only. Intervention tracking implementation begins in Phase 11."
-    )
+class InterventionStatus(BaseModel):
+    status: str
 
 
-@router.get("/{intervention_id}/impact", response_model=ApiResponse[InterventionMeasurementRead], summary="Get measured intervention impact delta")
-async def get_intervention_impact(intervention_id: str):
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Phase 0: Architecture scaffolding only. Impact measurement implementation begins in Phase 11."
-    )
+@router.post("/", response_model=ApiResponse[InterventionRead])
+async def record_intervention(
+    payload: InterventionCreate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_roles("AUTHORITY", "ADMIN")),
+):
+    item = Intervention(id=str(uuid4()), **payload.model_dump(), dispatched_at=datetime.now(UTC))
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return ApiResponse(data=item)
+
+
+@router.patch("/{intervention_id}/status", response_model=ApiResponse[InterventionRead])
+async def update_intervention(
+    intervention_id: str,
+    payload: InterventionStatus,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_roles("AUTHORITY", "ADMIN")),
+):
+    item = await db.get(Intervention, intervention_id)
+    if item is None:
+        raise HTTPException(404, "Intervention not found")
+    now = datetime.now(UTC)
+    if payload.status == "EXECUTED":
+        item.executed_at = now
+    elif payload.status == "COMPLETED":
+        item.completed_at = now
+    else:
+        raise HTTPException(422, "Status must be EXECUTED or COMPLETED")
+    await db.commit()
+    await db.refresh(item)
+    return ApiResponse(data=item)

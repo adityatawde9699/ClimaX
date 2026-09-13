@@ -4,8 +4,8 @@ ClimaX Scaffolding & Architecture Verification Script
 Performs automated static validation of repository structure, files, schemas, and Phase 0 hygiene.
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 REQUIRED_DIRECTORIES = [
@@ -123,7 +123,7 @@ def main():
         if "node_modules" in str(jf) or ".next" in str(jf):
             continue
         try:
-            with open(jf, "r") as file:
+            with open(jf) as file:
                 json.load(file)
         except Exception as e:
             errors.append(f"Invalid JSON in {jf.relative_to(root)}: {e}")
@@ -131,12 +131,17 @@ def main():
     # 4. Check for prohibited secret patterns in repository
     sensitive_tokens = ["AIza" + "Sy", "xox" + "b-", "gh" + "p_"]
     for path in root.rglob("*"):
-        if path.is_file() and not any(ignored in str(path) for ignored in [".git", "node_modules", ".venv", "__pycache__", "scripts", "tests"]):
+        if path.is_file() and not any(
+            ignored in str(path)
+            for ignored in [".git", "node_modules", ".venv", "__pycache__", "scripts", "tests"]
+        ):
             try:
                 content = path.read_text(encoding="utf-8", errors="ignore")
                 for token in sensitive_tokens:
                     if token in content:
-                        errors.append(f"Potential secret pattern detected in {path.relative_to(root)}")
+                        errors.append(
+                            f"Potential secret pattern detected in {path.relative_to(root)}"
+                        )
             except Exception:
                 pass
 
@@ -146,7 +151,9 @@ def main():
             print(f"  - {err}")
         sys.exit(1)
     else:
-        print("\n✅ Verification PASSED: All 40+ architectural directories, 35+ core files, schemas, and hygiene rules verified!")
+        print(
+            "\n✅ Verification PASSED: All 40+ architectural directories, 35+ core files, schemas, and hygiene rules verified!"
+        )
         sys.exit(0)
 
 

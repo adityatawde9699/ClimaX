@@ -44,7 +44,7 @@ class TestArchitectureScaffolding(unittest.TestCase):
         # Verify no real credentials
         forbidden_tokens = ["AIza" + "Sy", "gh" + "p_", "s" + "k-", "xox" + "b-"]
         for token in forbidden_tokens:
-            self.assertNotIn(token, content, f"Potentially live credential detected in .env.example")
+            self.assertNotIn(token, content, "Potentially live credential detected in .env.example")
 
 
 if __name__ == "__main__":

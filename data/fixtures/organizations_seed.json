@@ -12,5 +12,12 @@
     "jurisdiction_code": "IN-NATIONAL-CPCB",
     "department": "Ministry of Environment, Forest and Climate Change",
     "contact_email": "cpcb@nic.in"
+  },
+  {
+    "id": "org-new-delhi-municipal-council",
+    "name": "New Delhi Municipal Council (NDMC)",
+    "jurisdiction_code": "DL-NDMC-01",
+    "department": "Public Health Department",
+    "contact_email": "environment@ndmc.gov.in"
   }
 ]

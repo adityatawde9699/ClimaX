@@ -1,0 +1,1 @@
+"""ClimaX API application package."""

@@ -4,24 +4,103 @@ Boundary for environmental incident triage, field dispatch, and status lifecycle
 Implementation scheduled for Phase 9.
 """
 
-from fastapi import APIRouter, HTTPException, status
-from schemas.entities import IncidentCreate, IncidentRead
+from datetime import UTC, datetime
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from security.jwt import require_roles
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.database import get_db
+from models.entities import Incident, User
 from schemas.base import ApiResponse, PaginatedResponse
+from schemas.entities import IncidentCreate, IncidentRead
+from services.incident_service import can_transition
 
 router = APIRouter(prefix="/incidents", tags=["Incidents"])
 
 
+def serialize(item: Incident) -> dict:
+    return {
+        "id": item.id,
+        "organization_id": item.organization_id,
+        "title": item.title,
+        "status": item.status,
+        "severity": item.severity,
+        "category": item.category,
+        "location": {"latitude": item.latitude, "longitude": item.longitude},
+        "assigned_officer_id": item.assigned_officer_id,
+        "risk_score": item.risk_score,
+        "ai_analysis_id": item.ai_analysis_id,
+        "created_at": item.created_at,
+        "resolved_at": item.resolved_at,
+    }
+
+
+class StatusUpdate(BaseModel):
+    status: str
+
+
 @router.get("/", response_model=PaginatedResponse[IncidentRead], summary="List active incidents")
-async def list_incidents():
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Phase 0: Architecture scaffolding only. Incident management implementation begins in Phase 9."
-    )
+async def list_incidents(db: AsyncSession = Depends(get_db)):
+    items = (await db.scalars(select(Incident))).all()
+    return PaginatedResponse(data=[serialize(item) for item in items], total=len(items))
 
 
 @router.post("/", response_model=ApiResponse[IncidentRead], summary="Create new incident")
-async def create_incident(incident: IncidentCreate):
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Phase 0: Architecture scaffolding only. Incident management implementation begins in Phase 9."
+async def create_incident(
+    incident: IncidentCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_roles("AUTHORITY", "ADMIN")),
+):
+    if not user.organization_id:
+        raise HTTPException(422, "Authority must belong to an organization")
+    item = Incident(
+        id=str(uuid4()),
+        organization_id=user.organization_id,
+        title=incident.title,
+        severity=incident.severity.value,
+        category=incident.category.value,
+        latitude=incident.location.latitude,
+        longitude=incident.location.longitude,
+        geom=f"SRID=4326;POINT({incident.location.longitude} {incident.location.latitude})",
+        assigned_officer_id=incident.assigned_officer_id,
     )
+    db.add(item)
+    await db.commit()
+    await db.refresh(item)
+    return ApiResponse(data=serialize(item))
+
+
+@router.get("/{incident_id}", response_model=IncidentRead)
+async def get_incident(incident_id: str, db: AsyncSession = Depends(get_db)):
+    item = await db.get(Incident, incident_id)
+    if item is None:
+        raise HTTPException(404, "Incident not found")
+    return serialize(item)
+
+
+@router.patch("/{incident_id}/status", response_model=ApiResponse[IncidentRead])
+async def update_status(
+    incident_id: str,
+    payload: StatusUpdate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_roles("AUTHORITY", "ADMIN")),
+):
+    item = await db.get(Incident, incident_id)
+    if item is None:
+        raise HTTPException(404, "Incident not found")
+    try:
+        valid = can_transition(item.status, payload.status)
+    except ValueError:
+        valid = False
+    if not valid:
+        raise HTTPException(409, f"Invalid transition from {item.status} to {payload.status}")
+    item.status = payload.status
+    if payload.status == "RESOLVED":
+        item.resolved_at = datetime.now(UTC)
+    await db.commit()
+    await db.refresh(item)
+    return ApiResponse(data=serialize(item))

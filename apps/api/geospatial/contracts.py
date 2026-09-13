@@ -4,7 +4,7 @@ Handles spatial geometry operations, polygon clipping, and coordinate reference 
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import Any
 
 
 class IGeospatialService(ABC):
@@ -15,9 +15,13 @@ class IGeospatialService(ABC):
         pass
 
     @abstractmethod
-    def calculate_bounding_box(self, latitude: float, longitude: float, radius_km: float) -> List[float]:
+    def calculate_bounding_box(
+        self, latitude: float, longitude: float, radius_km: float
+    ) -> list[float]:
         pass
 
     @abstractmethod
-    def buffer_polygon_meters(self, geojson_polygon: Dict[str, Any], distance_m: float) -> Dict[str, Any]:
+    def buffer_polygon_meters(
+        self, geojson_polygon: dict[str, Any], distance_m: float
+    ) -> dict[str, Any]:
         pass

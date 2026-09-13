@@ -3,9 +3,9 @@ ClimaX AI Schema Contracts & Trust Taxonomy
 Compliant with 4-tier information classification: OBSERVED, INFERRED, PREDICTED, VERIFIED.
 """
 
-from enum import Enum
-from typing import List, Optional
 from datetime import datetime
+from enum import Enum
+
 from pydantic import BaseModel, Field
 
 
@@ -45,11 +45,20 @@ class PollutionCategory(str, Enum):
 
 class AIExplanationSchema(BaseModel):
     """Canonical contract required for all AI inferences and model predictions."""
+
     result: str = Field(..., description="Summary conclusion of the AI analysis")
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Normalized confidence score [0.0 - 1.0]")
+    confidence: float = Field(
+        ..., ge=0.0, le=1.0, description="Normalized confidence score [0.0 - 1.0]"
+    )
     confidence_tier: ConfidenceTier = Field(..., description="Categorized confidence bracket")
-    evidence: List[str] = Field(default_factory=list, description="Explicit observational or sensor justifications")
-    data_sources: List[str] = Field(default_factory=list, description="IDs or URIs of inputs feeding the inference")
+    evidence: list[str] = Field(
+        default_factory=list, description="Explicit observational or sensor justifications"
+    )
+    data_sources: list[str] = Field(
+        default_factory=list, description="IDs or URIs of inputs feeding the inference"
+    )
     model: str = Field(..., description="Model identifier and checkpoint version")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Timestamp of inference")
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow, description="Timestamp of inference"
+    )
     verification_status: VerificationStatus = Field(default=VerificationStatus.UNVERIFIED)

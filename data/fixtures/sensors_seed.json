@@ -26,5 +26,29 @@
     },
     "is_calibrated": true,
     "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-rohini-01", "data_source_id": "ds-iot-community-mesh", "external_sensor_id": "IOT_DEL_RH_01", "sensor_type": "IOT_LOW_COST", "model_name": "Plantower PMS5003", "location": {"latitude": 28.737, "longitude": 77.11}, "is_calibrated": true, "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-dwarka-01", "data_source_id": "ds-iot-community-mesh", "external_sensor_id": "IOT_DEL_DW_01", "sensor_type": "IOT_LOW_COST", "model_name": "Plantower PMS5003", "location": {"latitude": 28.592, "longitude": 77.046}, "is_calibrated": true, "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-okhla-01", "data_source_id": "ds-iot-community-mesh", "external_sensor_id": "IOT_DEL_OK_01", "sensor_type": "IOT_LOW_COST", "model_name": "Plantower PMS5003", "location": {"latitude": 28.535, "longitude": 77.274}, "is_calibrated": true, "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-mayapuri-01", "data_source_id": "ds-iot-community-mesh", "external_sensor_id": "IOT_DEL_MP_01", "sensor_type": "IOT_LOW_COST", "model_name": "Plantower PMS5003", "location": {"latitude": 28.637, "longitude": 77.128}, "is_calibrated": true, "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-saket-01", "data_source_id": "ds-iot-community-mesh", "external_sensor_id": "IOT_DEL_SK_01", "sensor_type": "IOT_LOW_COST", "model_name": "Plantower PMS5003", "location": {"latitude": 28.524, "longitude": 77.207}, "is_calibrated": true, "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-bawana-01", "data_source_id": "ds-iot-community-mesh", "external_sensor_id": "IOT_DEL_BW_01", "sensor_type": "IOT_LOW_COST", "model_name": "Plantower PMS5003", "location": {"latitude": 28.799, "longitude": 77.033}, "is_calibrated": true, "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-shahdara-01", "data_source_id": "ds-iot-community-mesh", "external_sensor_id": "IOT_DEL_SD_01", "sensor_type": "IOT_LOW_COST", "model_name": "Plantower PMS5003", "location": {"latitude": 28.681, "longitude": 77.289}, "is_calibrated": true, "is_active": true
+  },
+  {
+    "id": "sn-iot-delhi-vasant-kunj-01", "data_source_id": "ds-iot-community-mesh", "external_sensor_id": "IOT_DEL_VK_01", "sensor_type": "IOT_LOW_COST", "model_name": "Plantower PMS5003", "location": {"latitude": 28.523, "longitude": 77.158}, "is_calibrated": true, "is_active": true
   }
 ]

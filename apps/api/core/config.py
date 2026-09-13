@@ -3,7 +3,6 @@ ClimaX Core Configuration Module
 Loads and validates environment configurations using Pydantic Settings.
 """
 
-from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,13 +13,18 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://climax_user:climax_dev_password@localhost:5432/climax_db"
-    DATABASE_SYNC_URL: str = "postgresql+psycopg2://climax_user:climax_dev_password@localhost:5432/climax_db"
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://climax_user:climax_dev_password@localhost:5432/climax_db"
+    )
+    DATABASE_SYNC_URL: str = (
+        "postgresql+psycopg2://climax_user:climax_dev_password@localhost:5432/climax_db"
+    )
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 10
+    DB_TIMEOUT_SECONDS: int = 3
 
     # Google Cloud & AI
     GCP_PROJECT_ID: str = "climax-prod-project-id"
@@ -28,7 +32,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL_TEXT: str = "gemini-1.5-pro"
     GEMINI_MODEL_MULTIMODAL: str = "gemini-1.5-pro"
-    
+
     # Vertex AI
     VERTEX_AI_ENDPOINT_POLLUTION_PREDICTION: str = ""
 

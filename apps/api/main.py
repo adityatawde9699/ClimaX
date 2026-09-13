@@ -1,23 +1,25 @@
 """
 ClimaX FastAPI Application Entrypoint
 Establishes the API lifecycle, CORS policies, global exception filters, and mounts versioned routers.
-Phase 0 Architecture Scaffolding Mode.
+Phase 2 Core API Foundation.
 """
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from core.config import settings
-from core.logging import logger
-from core.exceptions import ClimaxBaseException
 from api.v1.router import api_v1_router
+from core.config import settings
+from core.database import database_is_healthy
+from core.exceptions import ClimaxBaseException
+from core.logging import logger
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing ClimaX Platform API (Phase 0 Scaffolding Mode)...")
+    logger.info("Initializing ClimaX Platform API...")
     logger.info(f"Target Environment: {settings.ENVIRONMENT}")
     yield
     logger.info("Shutting down ClimaX Platform API...")
@@ -63,10 +65,11 @@ async def climax_exception_handler(request: Request, exc: ClimaxBaseException):
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """System health check endpoint verifying process uptime and active phase."""
+    """System health check endpoint, including database connectivity."""
+    database_healthy = await database_is_healthy()
     return {
-        "status": "healthy",
-        "phase": "Phase 0 (Architecture & Scaffolding)",
+        "status": "healthy" if database_healthy else "degraded",
+        "database": "healthy" if database_healthy else "unavailable",
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
     }
@@ -78,4 +81,5 @@ app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
