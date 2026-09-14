@@ -138,6 +138,7 @@ class EnvironmentalObservationCreate(BaseModel):
 class EnvironmentalObservationRead(EnvironmentalObservationCreate):
     id: str
     tier: InformationTier = InformationTier.OBSERVED
+    quality_flag: str = "VALID"
     created_at: datetime
 
 
@@ -173,6 +174,7 @@ class AIAnalysisRead(BaseModel):
     classification: PollutionCategory
     explanation: AIExplanationSchema
     suggested_severity: IncidentSeverity
+    confidence_score: float
     created_at: datetime
 
 

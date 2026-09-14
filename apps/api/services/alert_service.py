@@ -21,3 +21,11 @@ class AlertService:
             dispatched_at=datetime.now(UTC),
         )
         return await self.repository.create(data)
+
+    @staticmethod
+    def severity_for_pm25(pm25: float) -> str | None:
+        if pm25 > 250:
+            return "CRITICAL"
+        if pm25 > 150:
+            return "VERY_HIGH"
+        return None

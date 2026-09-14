@@ -12,3 +12,7 @@ def test_user_write_routes_require_bearer_authentication():
     paths = app.openapi()["paths"]
     assert paths["/api/v1/users/"]["post"]["security"] == [{"HTTPBearer": []}]
     assert paths["/api/v1/users/{user_id}"]["patch"]["security"] == [{"HTTPBearer": []}]
+
+
+def test_phase_three_weather_route_is_registered():
+    assert "get" in app.openapi()["paths"]["/api/v1/weather"]

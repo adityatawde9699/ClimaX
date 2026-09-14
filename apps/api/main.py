@@ -4,11 +4,15 @@ Establishes the API lifecycle, CORS policies, global exception filters, and moun
 Phase 2 Core API Foundation.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, status
+import jwt
+from events.broker import broker
+from fastapi import FastAPI, Request, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from observability.metrics import metrics_middleware, metrics_response
 
 from api.v1.router import api_v1_router
 from core.config import settings
@@ -46,6 +50,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.middleware("http")(metrics_middleware)
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    return metrics_response()
 
 
 @app.exception_handler(ClimaxBaseException)
@@ -77,6 +87,25 @@ async def health_check():
 
 # Mount versioned API router
 app.include_router(api_v1_router, prefix=settings.API_V1_STR)
+
+
+@app.websocket("/ws/events")
+async def events(socket: WebSocket):
+    token = socket.query_params.get("token")
+    try:
+        jwt.decode(token or "", settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    except jwt.PyJWTError:
+        await socket.close(code=1008)
+        return
+    await broker.connect(socket)
+    try:
+        while True:
+            try:
+                await asyncio.wait_for(socket.receive_text(), timeout=30)
+            except TimeoutError:
+                await socket.send_json({"event": "heartbeat"})
+    except Exception:
+        broker.disconnect(socket)
 
 
 if __name__ == "__main__":

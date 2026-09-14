@@ -1,24 +1,38 @@
-"""
-Risk Engine API Router — /api/v1/risk
-Boundary for multi-criteria environmental risk calculation and demographic vulnerability.
-Implementation scheduled for Phase 8.
-"""
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter, HTTPException, status
-
-from schemas.base import ApiResponse, CoordinatesDTO
-from schemas.entities import RiskAssessmentRead
+from core.database import get_db
+from models.entities import RiskAssessment
+from schemas.base import ApiResponse, PaginatedResponse
+from services.risk_service import RiskService
 
 router = APIRouter(prefix="/risk", tags=["Environmental Risk"])
 
 
-@router.post(
-    "/evaluate",
-    response_model=ApiResponse[RiskAssessmentRead],
-    summary="Evaluate risk score for target area",
-)
-async def evaluate_risk(location: CoordinatesDTO):
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Phase 0: Architecture scaffolding only. Risk engine implementation begins in Phase 8.",
-    )
+def serialize(item):
+    return {
+        "id": item.id,
+        "location": {"latitude": item.latitude, "longitude": item.longitude},
+        "risk_score": item.risk_score,
+        "severity": item.severity,
+        "population_vulnerability_index": item.population_vulnerability_index,
+        "sensitive_receptors_count": item.sensitive_receptors_count,
+        "dominant_pollutant": item.dominant_pollutant,
+        "calculated_at": item.calculated_at,
+    }
+
+
+@router.get("", response_model=ApiResponse[dict])
+async def evaluate_risk(
+    lat: float = Query(...), lng: float = Query(...), db: AsyncSession = Depends(get_db)
+):
+    return ApiResponse(data=serialize(await RiskService().evaluate(db, lat, lng)))
+
+
+@router.get("/hotspots", response_model=PaginatedResponse[dict])
+async def hotspots(db: AsyncSession = Depends(get_db)):
+    data = (
+        await db.scalars(select(RiskAssessment).order_by(desc(RiskAssessment.risk_score)).limit(10))
+    ).all()
+    return PaginatedResponse(data=[serialize(item) for item in data], total=len(data))

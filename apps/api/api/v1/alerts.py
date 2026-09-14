@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from events.broker import broker
 from fastapi import APIRouter, Depends
 from security.jwt import require_roles
 from sqlalchemy import select
@@ -46,4 +47,5 @@ async def broadcast_alert(
     db.add(item)
     await db.commit()
     await db.refresh(item)
+    await broker.publish("alert.dispatched", {"id": item.id, "severity": item.severity})
     return ApiResponse(data=item)

@@ -87,6 +87,7 @@ class EnvironmentalObservation(Base, TimestampMixin):
     )
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
     tier: Mapped[str] = mapped_column(String(20), default="OBSERVED")
+    quality_flag: Mapped[str] = mapped_column(String(20), default="VALID", nullable=False)
     pm25: Mapped[float | None] = mapped_column(Float, nullable=True)
     pm10: Mapped[float | None] = mapped_column(Float, nullable=True)
     no2: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -131,6 +132,8 @@ class AIAnalysis(Base, TimestampMixin):
     classification: Mapped[str] = mapped_column(String(50), nullable=False)
     explanation: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     suggested_severity: Mapped[str] = mapped_column(String(30), nullable=False)
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    raw_model_response: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class PollutionEvent(Base, TimestampMixin):
@@ -216,6 +219,7 @@ class Incident(Base, TimestampMixin):
         String(36), ForeignKey("ai_analyses.id"), nullable=True
     )
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    root_cause_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class Verification(Base, TimestampMixin):

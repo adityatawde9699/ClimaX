@@ -17,6 +17,7 @@ from api.v1.reports import router as reports_router
 from api.v1.risk import router as risk_router
 from api.v1.sensors import router as sensors_router
 from api.v1.users import router as users_router
+from api.v1.weather import router as weather_router
 
 api_v1_router = APIRouter()
 
@@ -33,3 +34,4 @@ api_v1_router.include_router(alerts_router)
 api_v1_router.include_router(interventions_router)
 api_v1_router.include_router(analytics_router)
 api_v1_router.include_router(ai_router)
+api_v1_router.include_router(weather_router)

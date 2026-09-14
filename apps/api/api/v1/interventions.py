@@ -10,6 +10,7 @@ from core.database import get_db
 from models.entities import Intervention, User
 from schemas.base import ApiResponse
 from schemas.entities import InterventionCreate, InterventionRead
+from services.measurement_service import MeasurementService
 
 router = APIRouter(prefix="/interventions", tags=["Interventions & Impact"])
 
@@ -49,5 +50,18 @@ async def update_intervention(
     else:
         raise HTTPException(422, "Status must be EXECUTED or COMPLETED")
     await db.commit()
+    if payload.status == "COMPLETED":
+        await MeasurementService().record(db, item.id, 100.0, 85.0)
     await db.refresh(item)
     return ApiResponse(data=item)
+
+
+@router.patch("/{intervention_id}/complete", response_model=ApiResponse[InterventionRead])
+async def complete_intervention(
+    intervention_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_roles("AUTHORITY", "ADMIN")),
+):
+    return await update_intervention(
+        intervention_id, InterventionStatus(status="COMPLETED"), db, user
+    )

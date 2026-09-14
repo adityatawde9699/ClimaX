@@ -135,6 +135,12 @@ export const spacing = {
   section: '2.0rem',   // 32px
 } as const;
 
+export const transitions = {
+  fast: '150ms',
+  normal: '250ms',
+  slow: '400ms',
+} as const;
+
 export const borderRadius = {
   none: '0px',
   sm: '2px',   // Sharp technical look for charts & data tables
@@ -144,6 +150,10 @@ export const borderRadius = {
 } as const;
 
 export const shadows = {
+  low: '0 1px 2px rgba(0, 0, 0, 0.35)',
+  medium: '0 8px 16px rgba(0, 0, 0, 0.4)',
+  high: '0 20px 25px -5px rgba(0, 0, 0, 0.7)',
+  card: '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5)',
   panel: '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5)',
   elevationHigh: '0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7)',
 } as const;

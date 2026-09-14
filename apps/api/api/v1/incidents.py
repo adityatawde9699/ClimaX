@@ -7,7 +7,8 @@ Implementation scheduled for Phase 9.
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from events.broker import broker
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 from security.jwt import require_roles
 from sqlalchemy import select
@@ -49,6 +50,15 @@ async def list_incidents(db: AsyncSession = Depends(get_db)):
     return PaginatedResponse(data=[serialize(item) for item in items], total=len(items))
 
 
+@router.get("/export/csv")
+async def export_incidents(db: AsyncSession = Depends(get_db)):
+    items = (await db.scalars(select(Incident))).all()
+    rows = ["id,title,severity,status"] + [
+        f'"{item.id}","{item.title}","{item.severity}","{item.status}"' for item in items
+    ]
+    return Response("\n".join(rows), media_type="text/csv")
+
+
 @router.post("/", response_model=ApiResponse[IncidentRead], summary="Create new incident")
 async def create_incident(
     incident: IncidentCreate,
@@ -71,6 +81,7 @@ async def create_incident(
     db.add(item)
     await db.commit()
     await db.refresh(item)
+    await broker.publish("incident.created", serialize(item))
     return ApiResponse(data=serialize(item))
 
 
@@ -101,6 +112,23 @@ async def update_status(
     item.status = payload.status
     if payload.status == "RESOLVED":
         item.resolved_at = datetime.now(UTC)
+    await db.commit()
+    await db.refresh(item)
+    await broker.publish("incident.updated", serialize(item))
+    return ApiResponse(data=serialize(item))
+
+
+@router.post("/{incident_id}/assign", response_model=ApiResponse[IncidentRead])
+async def assign_incident(
+    incident_id: str,
+    officer_id: str,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_roles("AUTHORITY", "ADMIN")),
+):
+    item = await db.get(Incident, incident_id)
+    if item is None:
+        raise HTTPException(404, "Incident not found")
+    item.assigned_officer_id = officer_id
     await db.commit()
     await db.refresh(item)
     return ApiResponse(data=serialize(item))

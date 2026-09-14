@@ -3,6 +3,8 @@ ClimaX Repository Interface Abstraction
 Defines the base contract for asynchronous data access layers (SQLAlchemy 2.0 async sessions).
 """
 
+from __future__ import annotations
+
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel

@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # Google Cloud & AI
     GCP_PROJECT_ID: str = "climax-prod-project-id"
     GCP_REGION: str = "us-central1"
+    PUBSUB_EMULATOR_HOST: str = ""
+    GCS_BUCKET: str = "climax-development"
+    OPEN_METEO_BASE_URL: str = "https://api.open-meteo.com/v1/forecast"
+    REDIS_URL: str = "redis://localhost:6379/0"
+    PUBSUB_SENSOR_SUBSCRIPTION: str = "climax-sensor-ingest-sub"
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL_TEXT: str = "gemini-1.5-pro"
     GEMINI_MODEL_MULTIMODAL: str = "gemini-1.5-pro"

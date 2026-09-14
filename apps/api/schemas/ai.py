@@ -3,7 +3,7 @@ ClimaX AI Schema Contracts & Trust Taxonomy
 Compliant with 4-tier information classification: OBSERVED, INFERRED, PREDICTED, VERIFIED.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -59,6 +59,14 @@ class AIExplanationSchema(BaseModel):
     )
     model: str = Field(..., description="Model identifier and checkpoint version")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Timestamp of inference"
+        default_factory=lambda: datetime.now(UTC), description="Timestamp of inference"
     )
     verification_status: VerificationStatus = Field(default=VerificationStatus.UNVERIFIED)
+    reasoning_steps: list[str] = Field(default_factory=list)
+    uncertainty_disclaimer: str = (
+        "AI-generated assessment; verify with field evidence before enforcement."
+    )
+    pollution_category: PollutionCategory = PollutionCategory.OTHER
+    suggested_severity: str = "MODERATE"
+    plume_bbox: list[float] | None = Field(default=None, min_length=4, max_length=4)
+    health_risk: str | None = None

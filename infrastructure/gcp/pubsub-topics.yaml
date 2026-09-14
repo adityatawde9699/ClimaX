@@ -1,20 +1,26 @@
 # Google Cloud Pub/Sub Streaming Topics & Subscriptions Configuration
 topics:
-  - name: sensor-ingest
+  - name: climax-sensor-ingest
     messageRetentionDuration: "604800s" # 7 days
     subscriptions:
-      - name: sensor-ingest-to-db-sub
+      - name: climax-sensor-ingest-to-db-sub
         ackDeadlineSeconds: 30
-      - name: sensor-ingest-to-bigquery-sub
+      - name: climax-sensor-ingest-dlq
         ackDeadlineSeconds: 60
 
-  - name: citizen-reports
+  - name: climax-citizen-reports
     messageRetentionDuration: "604800s"
     subscriptions:
-      - name: report-gemini-multimodal-sub
+      - name: climax-citizen-reports-sub
         ackDeadlineSeconds: 120
 
-  - name: alert-dispatch
+  - name: climax-ai-dispatch
+    messageRetentionDuration: "604800s"
+    subscriptions:
+      - name: climax-ai-dispatch-sub
+        ackDeadlineSeconds: 120
+
+  - name: climax-alerts-dispatch
     messageRetentionDuration: "86400s" # 1 day
     subscriptions:
       - name: alert-fcm-push-sub

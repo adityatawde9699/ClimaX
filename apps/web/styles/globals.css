@@ -19,3 +19,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.input { @apply rounded-md border border-climax-border bg-climax-bg px-3 py-2 text-white outline-none transition focus:border-teal-400 focus:ring-1 focus:ring-teal-400; }
+.map-control { @apply rounded-md border border-climax-border bg-climax-surface p-2 text-slate-200 shadow-medium transition hover:bg-slate-800; }
+.map-grid { background-image: linear-gradient(rgba(67, 86, 118, .2) 1px, transparent 1px), linear-gradient(90deg, rgba(67, 86, 118, .2) 1px, transparent 1px); background-size: 36px 36px; }
+.map-heat { background-image: radial-gradient(circle at 30% 30%, rgba(239, 68, 68, .3), transparent 24%), radial-gradient(circle at 65% 55%, rgba(245, 158, 11, .28), transparent 28%), linear-gradient(rgba(67, 86, 118, .2) 1px, transparent 1px), linear-gradient(90deg, rgba(67, 86, 118, .2) 1px, transparent 1px); }
