@@ -3,9 +3,9 @@
 ClimaX enforces a multi-level automated testing pyramid:
 
 - `unit/`: Pure function, parser, and domain service unit tests with zero I/O dependencies.
-- `api/`: FastAPI endpoint integration tests using `httpx.AsyncClient` against mock repositories.
+- `api/`: FastAPI endpoint contract tests using `httpx.AsyncClient`.
 - `geospatial/`: PostGIS spatial query validation, Haversine accuracy checks, and buffer calculations.
-- `ai_eval/`: Synthetic benchmark tests measuring Gemini multimodal classification accuracy against labeled ground truth images.
+- `ai_eval/`: Provider evaluation tests using explicitly managed, non-production evaluation datasets.
 - `integration/`: End-to-end multi-component tests verifying database persistence and Pub/Sub event dispatch.
 - `e2e/`: Playwright / Cypress browser automation tests for Citizen reporting flows and Command Center dashboards.
 

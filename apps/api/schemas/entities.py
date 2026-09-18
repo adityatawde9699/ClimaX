@@ -252,6 +252,7 @@ class IncidentRead(IncidentCreate):
     risk_score: float | None = None
     ai_analysis_id: str | None = None
     created_at: datetime
+    updated_at: datetime
     resolved_at: datetime | None = None
 
 

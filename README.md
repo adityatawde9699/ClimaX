@@ -1,12 +1,12 @@
 # ClimaX — Federated AI Environmental Intelligence & Action Platform
 
-[![Implementation Phase](https://img.shields.io/badge/Phases-0--2%20Implemented-success.svg)](#development-phases)
+[![Implementation Phase](https://img.shields.io/badge/Phases-0--8%20Implemented-success.svg)](#development-phases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)](pyproject.toml)
-[![Next.js](https://img.shields.io/badge/Next.js-14%2B-black.svg)](apps/web)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](apps/web)
 [![Google Cloud](https://img.shields.io/badge/Google_Cloud-Vertex_AI_%7C_Earth_Engine-4285F4.svg)](docs/architecture/system-architecture.md)
 
-> **Phases 1–2 Status Notice**: Local development foundations and the core database-backed API are implemented, including PostGIS migrations, deterministic seed data, JWT/RBAC security, CRUD routes, geospatial queries, and automated validation. Phase 3 is the next delivery milestone.
+> **Implementation status**: Phases 0–8 are implemented, including PostGIS migrations, JWT/RBAC security, CRUD routes, ingestion, AI/provider integrations, geospatial queries, the operational frontend, and production validation. Databases start empty; production records arrive only through authenticated APIs and configured ingestion services.
 
 ---
 
@@ -129,7 +129,7 @@ ClimaX avoids premature microservice overhead during MVP and hackathon execution
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
-│ FRONTEND: Next.js 14+ App Router, React 18, TypeScript, Tailwind CSS      │
+│ FRONTEND: Next.js 16 App Router, React 18, TypeScript, Tailwind CSS       │
 │ (Feature-based: Command Center, Pollution Map, Citizen Portal, Data Studio)│
 └─────────────────────────────────────┬──────────────────────────────────────┘
                                       │ REST API / WebSocket
@@ -158,7 +158,7 @@ ClimaX avoids premature microservice overhead during MVP and hackathon execution
 ```text
 climax/
 ├── apps/
-│   ├── web/                    # Next.js 14+ Frontend application (Citizen & Authority UI)
+│   ├── web/                    # Next.js 16 frontend application (Citizen & Authority UI)
 │   │   ├── app/                # App router route groups: (citizen), (authority), (admin)
 │   │   ├── components/         # Shared UI, layout, map controls, feedback components
 │   │   ├── features/           # Feature boundaries (command-center, incidents, predictions...)
@@ -193,10 +193,8 @@ climax/
 │   ├── environmental-data/     # IoT ingestion, CPCB/EPA government connectors
 │   ├── alerts/                 # Multi-channel notification routing & SMS/Push
 │   └── analytics/              # BigQuery aggregation & reporting pipelines
-├── data/                       # Schemas, seed data, and fixtures
-│   ├── schemas/                # Canonical JSON Schema specifications for 16 entities
-│   ├── samples/                # Sample raw sensor feeds, citizen reports, AI inferences
-│   └── fixtures/               # Seed data for baseline local testing
+├── data/                       # Schemas and production data policy
+│   └── schemas/                # Canonical JSON Schema specifications
 ├── infrastructure/             # Deployment & cloud configuration
 │   ├── docker/                 # Container definitions & local docker-compose
 │   ├── gcp/                    # Cloud Run configs, BigQuery DDL, Pub/Sub manifests
@@ -223,42 +221,11 @@ climax/
 
 ## 7. Development Roadmap
 
-ClimaX follows a disciplined 14-phase implementation plan:
-
-- **Phase 0: Architecture & Scaffolding (Current Phase)**
-  - Repository structure, configuration scaffolding, type definitions, schemas, and architecture documentation. Zero feature logic.
-- **Phase 1: Frontend Foundation & Design System**
-  - Implement the government-grade design token system, Tailwind palette, base layouts, navigation, and role-based shell.
-- **Phase 2: Backend Foundation & Database**
-  - PostgreSQL + PostGIS setup, Alembic migrations for 16 core entities, repository patterns, and base API v1 scaffolding.
-- **Phase 3: Environmental Data Ingestion**
-  - Connectors for OpenAQ, CPCB, weather APIs, and IoT sensor ingestion pipelines with deduplication.
-- **Phase 4: Citizen Reporting**
-  - Mobile reporting interface, photo upload to Google Cloud Storage, GPS reverse-geocoding, and report tracking.
-- **Phase 5: Gemini Multimodal Analysis**
-  - Integration with Gemini 1.5 Flash/Pro for image/video pollution classification, evidence extraction, and severity scoring.
-- **Phase 6: Pollution Prediction**
-  - Vertex AI predictive models forecasting 6h, 24h, and 72h localized pollutant concentrations and plume trajectory.
-- **Phase 7: Pollution Source Intelligence**
-  - Spatial correlation linking sensor spikes, wind vectors, and industrial zones to pinpoint likely emission culprits.
-- **Phase 8: Environmental Risk Engine**
-  - Composite multi-criteria risk scoring engine factoring in AQI, pollutant duration, and demographic vulnerability.
-- **Phase 9: Alerts & Incident Management**
-  - Authority incident command workflow, field team assignment, citizen push alerts, and status lifecycle.
-- **Phase 10: AI Copilot**
-  - Natural language environmental assistant for authorities and citizens powered by grounded Gemini reasoning.
-- **Phase 11: Intervention Tracking**
-  - Intervention logging (anti-smog guns, road watering, industrial notices) and pre/post atmospheric impact delta analysis.
-- **Phase 12: Federated Learning Demonstration**
-  - Edge model concept demonstrating privacy-preserving on-device smoke detection model updates across citizen nodes.
-- **Phase 13: Production Hardening & Cloud Deployment**
-  - Cloud Run deployment, BigQuery export pipelines, security audits, rate-limiting, and end-to-end stress testing.
+Phases 0–8 are implemented. The authoritative status, completed checklist, and remaining external deployment work are maintained in [ROADMAP.md](ROADMAP.md).
 
 ---
 
-## 8. Local Setup Prerequisites (Future Development)
-
-When transitioning to Phase 1 and beyond:
+## 8. Local Setup
 
 1. **System Dependencies**:
    - Node.js 20.x or later
@@ -267,9 +234,19 @@ When transitioning to Phase 1 and beyond:
 2. **Environment File**:
    ```bash
    cp .env.example .env
-   # Populate GCP_PROJECT_ID, GEMINI_API_KEY, and DB credentials for local testing
+   # Set secure local credentials and only the providers you intend to exercise.
    ```
-3. **Verify Scaffolding**:
+3. **Start PostgreSQL/PostGIS and Redis**:
+   ```bash
+   docker compose -f infrastructure/docker/docker-compose.yml up -d postgres redis
+   alembic -c infrastructure/database/alembic.ini upgrade head
+   ```
+4. **Run the applications**:
+   ```bash
+   npm run dev:api
+   npm run dev:web
+   ```
+5. **Verify the codebase**:
    ```bash
    python3 scripts/verify-scaffolding.py
    ```

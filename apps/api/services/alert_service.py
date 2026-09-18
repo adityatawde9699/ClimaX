@@ -22,6 +22,12 @@ class AlertService:
         )
         return await self.repository.create(data)
 
+    async def dispatch(self, alert_id: str) -> Alert | None:
+        return await self.repository.update(
+            alert_id,
+            {"is_dispatched": True, "dispatched_at": datetime.now(UTC)},
+        )
+
     @staticmethod
     def severity_for_pm25(pm25: float) -> str | None:
         if pm25 > 250:

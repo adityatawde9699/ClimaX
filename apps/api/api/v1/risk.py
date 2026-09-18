@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, Query
+from integrations.cache import cache
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.database import get_db
 from models.entities import RiskAssessment
 from schemas.base import ApiResponse, PaginatedResponse
@@ -27,12 +29,23 @@ def serialize(item):
 async def evaluate_risk(
     lat: float = Query(...), lng: float = Query(...), db: AsyncSession = Depends(get_db)
 ):
-    return ApiResponse(data=serialize(await RiskService().evaluate(db, lat, lng)))
+    cache_key = f"risk:{round(lat, 4)}:{round(lng, 4)}"
+    cached = await cache.get(cache_key)
+    if cached is not None:
+        return ApiResponse(data=cached)
+    data = serialize(await RiskService().evaluate(db, lat, lng))
+    await cache.set(cache_key, data, settings.RISK_CACHE_TTL_SECONDS)
+    return ApiResponse(data=data)
 
 
 @router.get("/hotspots", response_model=PaginatedResponse[dict])
 async def hotspots(db: AsyncSession = Depends(get_db)):
+    cached = await cache.get("risk:hotspots")
+    if cached is not None:
+        return PaginatedResponse(data=cached, total=len(cached))
     data = (
         await db.scalars(select(RiskAssessment).order_by(desc(RiskAssessment.risk_score)).limit(10))
     ).all()
-    return PaginatedResponse(data=[serialize(item) for item in data], total=len(data))
+    serialized = [serialize(item) for item in data]
+    await cache.set("risk:hotspots", serialized, settings.RISK_CACHE_TTL_SECONDS)
+    return PaginatedResponse(data=serialized, total=len(serialized))

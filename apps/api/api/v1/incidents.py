@@ -10,6 +10,7 @@ from uuid import uuid4
 from events.broker import broker
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
+from repositories.interventions import InterventionRepository
 from security.jwt import require_roles
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,8 +18,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from models.entities import Incident, User
 from schemas.base import ApiResponse, PaginatedResponse
-from schemas.entities import IncidentCreate, IncidentRead
+from schemas.entities import IncidentCreate, IncidentRead, InterventionCreate
 from services.incident_service import can_transition
+from services.intervention_service import InterventionService
 
 router = APIRouter(prefix="/incidents", tags=["Incidents"])
 
@@ -36,12 +38,19 @@ def serialize(item: Incident) -> dict:
         "risk_score": item.risk_score,
         "ai_analysis_id": item.ai_analysis_id,
         "created_at": item.created_at,
+        "updated_at": item.updated_at,
         "resolved_at": item.resolved_at,
     }
 
 
 class StatusUpdate(BaseModel):
     status: str
+
+
+class DispatchRequest(BaseModel):
+    intervention_type: str
+    executing_agency: str
+    action_summary: str
 
 
 @router.get("/", response_model=PaginatedResponse[IncidentRead], summary="List active incidents")
@@ -132,3 +141,30 @@ async def assign_incident(
     await db.commit()
     await db.refresh(item)
     return ApiResponse(data=serialize(item))
+
+
+@router.post("/{incident_id}/dispatch", response_model=ApiResponse[dict])
+async def dispatch_incident_intervention(
+    incident_id: str,
+    payload: DispatchRequest,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_roles("AUTHORITY", "ADMIN")),
+):
+    incident = await db.get(Incident, incident_id)
+    if incident is None:
+        raise HTTPException(404, "Incident not found")
+    if incident.status not in {"OPEN", "INVESTIGATING"}:
+        raise HTTPException(409, f"Incident in {incident.status} cannot be dispatched")
+    intervention = await InterventionService(InterventionRepository(db)).dispatch(
+        InterventionCreate(incident_id=incident.id, **payload.model_dump())
+    )
+    incident.status = "DISPATCHED"
+    await db.commit()
+    await db.refresh(incident)
+    await db.refresh(intervention)
+    await broker.publish("incident.updated", serialize(incident))
+    await broker.publish(
+        "intervention.dispatched",
+        {"id": intervention.id, "incident_id": incident.id},
+    )
+    return ApiResponse(data={"incident": serialize(incident), "intervention_id": intervention.id})

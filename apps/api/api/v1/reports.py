@@ -4,19 +4,32 @@ Boundary for citizen environmental reports and multimedia submissions.
 Implementation scheduled for Phase 4.
 """
 
+from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.concurrency import run_in_threadpool
+from integrations.gcs_adapter import GCSAdapter
+from pydantic import BaseModel, Field
 from security.jwt import get_current_user
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import settings
 from core.database import get_db
 from models.entities import CitizenReport, User
 from schemas.base import ApiResponse, PaginatedResponse
 from schemas.entities import CitizenReportCreate, CitizenReportRead
 
 router = APIRouter(prefix="/reports", tags=["Citizen Reports"])
+
+ALLOWED_REPORT_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp", "video/mp4"}
+
+
+class ReportUploadRequest(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    content_type: str
+    size_bytes: int = Field(gt=0)
 
 
 def serialize_report(item: CitizenReport) -> dict:
@@ -83,6 +96,33 @@ async def list_citizen_reports(
     items = (await db.scalars(statement)).all()
     data = [serialize_report(item) for item in items]
     return PaginatedResponse(data=data, total=len(data))
+
+
+@router.post("/upload-url", response_model=ApiResponse[dict])
+async def create_report_upload_url(
+    payload: ReportUploadRequest,
+    user: User = Depends(get_current_user),
+):
+    if payload.content_type not in ALLOWED_REPORT_MEDIA_TYPES:
+        raise HTTPException(422, "Unsupported report media type")
+    if payload.size_bytes > settings.MAX_REPORT_UPLOAD_BYTES:
+        raise HTTPException(413, "Report media exceeds the configured upload limit")
+    extension = Path(payload.filename).suffix.lower()
+    object_name = f"citizen-reports/{user.id}/{uuid4()}{extension}"
+    try:
+        upload_url = await run_in_threadpool(
+            GCSAdapter().generate_signed_upload_url, object_name, payload.content_type
+        )
+    except Exception as exc:
+        raise HTTPException(503, "Media storage is not configured or unavailable") from exc
+    return ApiResponse(
+        data={
+            "upload_url": upload_url,
+            "media_uri": f"gs://{settings.GCS_BUCKET}/{object_name}",
+            "expires_in_seconds": 900,
+            "required_headers": {"Content-Type": payload.content_type},
+        }
+    )
 
 
 @router.get(

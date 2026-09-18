@@ -18,10 +18,12 @@
     "format:api": "ruff format apps/api services",
     "typecheck:web": "npm --prefix apps/web run typecheck",
     "typecheck:packages": "npm --prefix packages/types run build",
+    "test:e2e": "playwright test",
     "verify:scaffolding": "python3 scripts/verify-scaffolding.py",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules .next"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "prettier": "^3.2.5",
     "typescript": "^5.4.5"
   },

@@ -25,7 +25,7 @@ The ClimaX backend is built with FastAPI (Python 3.11+) following strict Clean A
 │ 3. REPOSITORY LAYER (`apps/api/repositories/`)                         │
 │    • Encapsulates data access & query composition                      │
 │    • Asynchronous SQLAlchemy 2.0 queries & PostGIS spatial filters     │
-│    • In-memory mocking enabled for unit testing                        │
+│    • Dependency substitution at test boundaries                       │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
                                     ▼
@@ -50,7 +50,7 @@ All public endpoints are strictly versioned under `/api/v1/`:
 | **Environment** | `/api/v1/environment` | Live atmospheric observations, spatial radius queries, weather feeds. |
 | **Sensors** | `/api/v1/sensors` | Physical and low-cost sensor metadata, calibration state, health. |
 | **Incidents** | `/api/v1/incidents` | Municipal operational incidents, officer assignment, lifecycle. |
-| **Predictions** | `/api/v1/predictions` | 6h, 24h, 72h localized forecasting and Gaussian plume models. |
+| **Predictions** | `/api/v1/predictions` | 6h, 24h, 72h localized forecasts from the configured Vertex AI endpoint. |
 | **Risk** | `/api/v1/risk` | Composite Environmental Risk Index calculation and receptor exposure. |
 | **Alerts** | `/api/v1/alerts` | Public advisory broadcast, threshold trigger notifications. |
 | **Interventions** | `/api/v1/interventions` | Mitigation action logs (anti-smog guns) and impact delta tracking. |

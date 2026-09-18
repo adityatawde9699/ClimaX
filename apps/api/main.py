@@ -6,6 +6,7 @@ Phase 2 Core API Foundation.
 
 import asyncio
 from contextlib import asynccontextmanager
+from uuid import uuid4
 
 import jwt
 from events.broker import broker
@@ -90,6 +91,20 @@ async def database_exception_handler(
         request.url.path,
         exc.__class__.__name__,
     )
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "success": False,
+            "error": {
+                "type": "DatabaseUnavailable",
+                "message": (
+                    "Database service is unavailable. Start PostgreSQL/PostGIS "
+                    "or verify the production database connection."
+                ),
+                "details": None,
+            },
+        },
+    )
 
 
 @app.exception_handler(Exception)
@@ -110,22 +125,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
             },
         },
     )
-    return JSONResponse(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        content={
-            "success": False,
-            "error": {
-                "type": "DatabaseUnavailable",
-                "message": (
-                    "Database service is unavailable. Start PostgreSQL/PostGIS "
-                    "and retry."
-                ),
-                "details": None,
-            },
-        },
-    )
-
-
 @app.get("/health", tags=["Health"])
 async def health_check(response: Response):
     """System health check endpoint, including database connectivity."""
@@ -138,6 +137,25 @@ async def health_check(response: Response):
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT,
     }
+
+
+@app.post("/health/realtime-probe", include_in_schema=False)
+async def realtime_probe(request: Request):
+    """Emit a non-persistent event for authenticated post-deployment validation."""
+    authorization = request.headers.get("authorization", "")
+    if not authorization.startswith("Bearer "):
+        return JSONResponse(status_code=401, content={"detail": "Authentication required"})
+    try:
+        jwt.decode(
+            authorization.removeprefix("Bearer "),
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
+    except jwt.PyJWTError:
+        return JSONResponse(status_code=401, content={"detail": "Invalid authentication token"})
+    probe_id = str(uuid4())
+    await broker.publish("system.realtime_probe", {"id": probe_id})
+    return {"status": "published", "probe_id": probe_id}
 
 
 # Mount versioned API router

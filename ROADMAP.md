@@ -1,7 +1,7 @@
 # ClimaX — Master Implementation Roadmap
 
 > **Federated AI Environmental Intelligence & Action Platform**
-> Version `0.1.0` · Phases 0–2 implementation complete · Living document — update on every merge.
+> Version `0.1.0` · Phases 0–8 implementation complete · Living document — update on every merge.
 
 ---
 
@@ -19,7 +19,7 @@
 10. [Phase 5 — Gemini Multimodal Intelligence](#10-phase-5--gemini-multimodal-intelligence)
 11. [Phase 6 — Vertex AI Prediction & Risk Engine](#11-phase-6--vertex-ai-prediction--risk-engine)
 12. [Phase 7 — Municipal Action & Alert System](#12-phase-7--municipal-action--alert-system)
-13. [Phase 8 — Integration, Polish & Hackathon Demo](#13-phase-8--integration-polish--hackathon-demo)
+13. [Phase 8 — Integration, Polish & Production Readiness](#13-phase-8--integration-polish--production-readiness-)
 14. [Cross-Cutting Concerns](#14-cross-cutting-concerns)
 15. [Risk Register](#15-risk-register)
 16. [Open Questions & Decisions](#16-open-questions--decisions)
@@ -53,7 +53,7 @@ ClimaX transitions environmental governance from **passive observation** to **pr
         └──────────────────────────┼──────────────────────────┘
                                    │ HTTPS / WSS
                            ┌───────▼────────┐
-                           │  Next.js 14+   │  (Cloud Run Web · @climax/web)
+                           │  Next.js 16    │  (Cloud Run Web · @climax/web)
                            └───────┬────────┘
                                    │ REST / Streaming JSON
                            ┌───────▼────────┐
@@ -80,7 +80,7 @@ ClimaX transitions environmental governance from **passive observation** to **pr
 - **Modular Monolith** (not microservices) — maximises developer velocity, avoids distributed transaction complexity
 - **PostGIS R-Tree spatial indexing** — supports sub-100ms geospatial proximity queries
 - **Pydantic v2 + SQLAlchemy 2.0 (async)** — strict type safety from DB to wire
-- **Next.js 14 App Router** — server components for map data streaming; client components for real-time dashboard
+- **Next.js 16 App Router** — server components for map data streaming; client components for real-time dashboard
 
 ---
 
@@ -116,14 +116,14 @@ All entities are defined in `packages/types/src/entities.ts` (TypeScript) and `a
 | Phase | Name | Status | Est. Duration | Key Deliverable |
 |-------|------|--------|--------------|-----------------|
 | 0 | Architecture & Scaffolding | ✅ **Complete** | — | Repo structure, type contracts, SQL schema |
-| 1 | Local Dev Environment & Database | ✅ **Implementation Complete** | 0.5 day | Running DB + migrations + seeded fixtures |
+| 1 | Local Dev Environment & Database | ✅ **Implementation Complete** | 0.5 day | Running DB + migrations with an empty production baseline |
 | 2 | Core API Foundation | ✅ **Implementation Complete** | 1 day | Database-backed core API and authentication |
 | 3 | Data Ingestion Pipeline | ✅ **Implementation Complete** | 1 day | Live sensor + Pub/Sub ingest workers |
 | 4 | Frontend Shell & Design System | ✅ **Implementation Complete** | 1 day | Next.js shell + map + live AQI dashboard |
 | 5 | Gemini Multimodal Intelligence | ✅ **Implementation Complete** | 1 day | Citizen report → Gemini AI analysis pipeline |
 | 6 | Vertex AI Prediction & Risk Engine | ✅ **Implementation Complete** | 1 day | 6h/24h/72h plume predictions on the map |
 | 7 | Municipal Action & Alert System | ✅ **Implementation Complete** | 1 day | Incident lifecycle + dispatch + FCM alerts |
-| 8 | Integration, Polish & Demo | ✅ **Implementation Complete** | 0.5 day | End-to-end demo video + judge materials |
+| 8 | Integration, Polish & Production Readiness | ✅ **Implementation Complete** | 0.5 day | Production validation and deployment controls |
 
 **Total estimated hackathon build time: ~7 focused engineering days.**
 
@@ -206,17 +206,15 @@ All scaffolding files are present and verified. No business logic has been imple
 | Path | Contents |
 |------|---------|
 | `schemas/*.schema.json` | JSON Schema validation for 5 core document types |
-| `samples/*.json` | Sample documents for all 5 schema types |
-| `fixtures/sensors_seed.json` | 10 seed sensor records with PostGIS coordinates |
-| `fixtures/organizations_seed.json` | 3 seed municipal organizations |
+| `README.md` | Production data policy and ingestion guidance |
 
 ---
 
 ## 6. Phase 1 — Local Dev Environment & Database ✅
 
-**Status: IMPLEMENTATION COMPLETE.** Docker runtime acceptance remains a local/CI verification step because Docker is not installed in this workspace.
+**Status: IMPLEMENTATION COMPLETE.** Docker/PostGIS runtime and migrations have been verified locally.
 
-**Goal:** Every team member can run `docker compose up` and reach a fully seeded, running API + database within 5 minutes of cloning the repo.
+**Goal:** Every team member can run `docker compose up` and reach a migrated, empty API database within 5 minutes of cloning the repo.
 
 ### Prerequisites
 - Docker 24+ and Docker Compose v2
@@ -236,8 +234,8 @@ All scaffolding files are present and verified. No business logic has been imple
 #### 1.2 Database Migrations
 - [x] Configure Alembic to target `DATABASE_SYNC_URL` from `core/config.py`
 - [x] Generate Alembic migration from `0001_initial_schema.sql` as `revision 0001`
-- [ ] Run migration: `alembic upgrade head` succeeds cleanly against Docker DB
-- [ ] Verify PostGIS `Geometry` columns and spatial indexes are present after migration
+- [x] Run migration: `alembic upgrade head` succeeds cleanly against Docker DB
+- [x] Verify PostGIS `Geometry` columns and spatial indexes are present after migration
 - [x] Add `alembic downgrade -1` smoke test to CI
 
 #### 1.3 Production Data Initialization
@@ -275,7 +273,7 @@ All scaffolding files are present and verified. No business logic has been imple
 
 ## 7. Phase 2 — Core API Foundation ✅
 
-**Status: IMPLEMENTATION COMPLETE.** Database-backed CI is configured to perform PostGIS migrations, seeding, integration tests, spatial benchmarking, downgrade/upgrade validation, and service coverage enforcement.
+**Status: IMPLEMENTATION COMPLETE.** Database-backed CI performs PostGIS migrations, self-contained integration tests, temporary-table spatial benchmarking, downgrade/upgrade validation, and service coverage enforcement.
 
 **Goal:** All 11 API router modules have real CRUD implementations backed by PostgreSQL. No mock data. No hardcoded responses.
 
@@ -356,7 +354,7 @@ Router (api/v1/*.py)
   - `find_sensors_within_radius(lat, lng, radius_m)` — PostGIS `ST_DWithin`
   - `find_incidents_within_bbox(bbox)` — PostGIS `ST_Intersects`
   - `calculate_affected_population(geom, radius_m)` — PostGIS spatial join
-- [x] Benchmark spatial queries with seed data — target < 100ms for 10k sensors (enforced in CI)
+- [x] Benchmark spatial queries with an ephemeral 10k-row benchmark table — target < 100ms (enforced in CI)
 
 #### 2.7 Tests
 - [x] Integration tests for core router flows using `pytest-asyncio` + PostGIS CI database
@@ -562,7 +560,7 @@ All AI outputs **must** carry:
     6. List 3 specific visual evidence points supporting the classification
     7. Output structured JSON matching `AIExplanationSchema`
   - Parse response into `AIExplanationSchema` Pydantic model
-  - Handle malformed JSON responses with fallback extraction
+  - Reject malformed provider responses with an explicit analysis error
   - Store raw model response in `ai_analyses.raw_model_response`
 
 #### 5.3 Environmental Reasoning Engine
@@ -632,12 +630,9 @@ All AI outputs **must** carry:
 
 #### 6.2 ML Model Strategy
 
-> **Hackathon pragmatism**: If the Vertex AI custom endpoint is not provisioned in time, implement a **physics-informed fallback** using the Gaussian Plume Dispersion Model.
-
-- [x] **Primary**: Vertex AI LSTM/Transformer endpoint adapter
-- [x] **Fallback**: `prediction/gaussian_plume.py` — Gaussian dispersion formula with meteorological inputs
-- [x] Implement `prediction/fallback_predictor.py`
-- [x] Auto-switch to fallback when Vertex is unavailable
+- [x] Use the Vertex AI LSTM/Transformer endpoint adapter as the production prediction provider
+- [x] Remove synthetic Gaussian-plume predictions and fallback persistence
+- [x] Return HTTP 503 when the configured prediction provider is unavailable
 
 #### 6.3 Prediction Service
 - [x] Implement `services/prediction_service.py`:
@@ -755,29 +750,18 @@ All AI outputs **must** carry:
 
 ---
 
-## 13. Phase 8 — Integration, Polish & Hackathon Demo ✅
+## 13. Phase 8 — Integration, Polish & Production Readiness ✅
 
-**Status: IMPLEMENTATION COMPLETE.** Production deployment, live load testing, rehearsal, recording, and Cloud Monitoring configuration require external cloud access.
+**Status: IMPLEMENTATION COMPLETE.** Production deployment, live load testing, and Cloud Monitoring configuration require external cloud access.
 
-**Goal:** The platform tells a compelling, end-to-end story in 3 minutes. Every component is connected. The demo is scripted and repeatable.
+**Goal:** Every component is connected, observable, and deployable without synthetic runtime data.
 
 ### Tasks
 
-#### 8.1 End-to-End Demo Script
-- [x] Write `docs/demo-script.md`:
-  ```
-  T+00s: Open map. Show 3 active incidents. AQI heatmap visible.
-  T+30s: Submit citizen report with photo → "Analyzing with Gemini..."
-  T+40s: AI analysis: "Industrial smoke, CRITICAL, 94% confidence"
-  T+50s: Incident auto-created. Risk Score = 87 (VERY HIGH)
-  T+60s: AI Copilot: "Deploy anti-smog gun at coordinates X"
-  T+80s: Authority dispatches intervention. Marker appears on map.
-  T+100s: 24h prediction cone animates. AQI forecast shows improvement.
-  T+120s: Post-intervention: delta PM2.5 = -43%. ROI dashboard.
-  T+150s: BigQuery analytics query result in 2 seconds.
-  T+180s: "ClimaX closes the loop — from breath to accountability."
-  ```
-- [ ] Rehearse demo 3x with full team. Record backup video.
+#### 8.1 End-to-End Production Validation
+- [x] Verify empty-state behavior with no observations, reports, incidents, alerts, or predictions
+- [x] Return explicit provider errors instead of substituting synthetic forecasts
+- [x] Add a repeatable production build, lint, type-check, test, and dependency-audit workflow
 
 #### 8.2 Production Data Policy
 - [x] Remove demo incidents, observations, interventions, reports, analyses, and predictions
@@ -787,7 +771,7 @@ All AI outputs **must** carry:
 - [ ] Apply `infrastructure/gcp/cloud-run-api.yaml` and `cloud-run-web.yaml`
 - [ ] Configure Cloud Run environment variables from Secret Manager
 - [ ] Set up Cloud SQL (PostgreSQL 16) with PostGIS extension enabled
-- [ ] Configure Cloud Run min-instances=1 to avoid cold starts during demo
+- [ ] Configure Cloud Run min-instances based on latency and cost requirements
 - [ ] Verify the production database is empty before enabling ingestion
 
 #### 8.4 Observability
@@ -805,30 +789,28 @@ All AI outputs **must** carry:
 - [x] Add database indexes for high-frequency query patterns (runtime `EXPLAIN ANALYZE` pending PostGIS)
 - [ ] Implement response caching (Redis) for: predictions (TTL=1h), risk assessments (TTL=15min)
 
-#### 8.6 Documentation & Judge Materials
-- [ ] Update `README.md` with: live demo URL, architecture diagram, quick start instructions
+#### 8.6 Documentation
+- [x] Update `README.md` with architecture and quick-start instructions
 - [x] Create `docs/hackathon/`:
   - `architecture-deep-dive.md`
   - `ai-design.md` — Gemini prompt engineering choices, trust framework
   - `impact-analysis.md` — quantified environmental impact potential
   - `scalability.md` — how the platform scales to 100 cities
-- [ ] Create 60-second product teaser video (screen recording)
-- [ ] Prepare slide deck (10 slides max)
 
 #### 8.7 Final QA Checklist
 - [ ] All 11 API endpoints returning real data
 - [ ] Gemini AI analysis working on 3 different pollution photo types
 - [ ] Prediction visualization rendering correctly for all 3 horizons
-- [ ] Incident lifecycle completes end-to-end in demo
+- [ ] Incident lifecycle completes end-to-end in the production environment
 - [ ] WebSocket events firing in real-time
 - [ ] Mobile responsive: map and dashboard functional on 375px viewport
 - [x] Zero TypeScript errors
 - [x] Zero Ruff linting errors
 - [x] All env vars documented in `.env.example`
-- [ ] Demo seed script runs cleanly in < 30 seconds
+- [x] Database starts empty and integration tests create their own isolated records
 
 **Acceptance Criteria:**
-- Demo script completes end-to-end in <= 3 minutes
+- Production smoke test completes without synthetic or seeded runtime records
 - All critical paths work on the production Cloud Run deployment
 - Load test: 100 RPS with p99 < 500ms on primary endpoints
 
@@ -877,7 +859,7 @@ These must be addressed across all phases — not deferred to the end.
 | R1 | Vertex AI endpoint not provisioned in time | Medium | High | Return an explicit service-unavailable state; never substitute synthetic predictions. |
 | R2 | Gemini API rate limits exceeded | Low | Critical | Apply bounded retries, request budgets, and provider health monitoring. |
 | R3 | PostGIS spatial queries too slow at scale | Low | High | Add spatial indexes (`CREATE INDEX GIST`) in Phase 1. Benchmark in Phase 2 with 10k points. |
-| R4 | Earth Engine API authentication fails in demo | Medium | Medium | Pre-fetch and cache rasters in GCS. Serve from cache with graceful "live data unavailable" banner. |
+| R4 | Earth Engine API authentication fails | Medium | Medium | Serve a clear "live data unavailable" state and alert operators; never substitute generated raster data. |
 | R5 | WebSocket instability behind Cloud Run | Medium | Medium | Cloud Run supports WebSockets on HTTP/2. Fallback: long-polling with 5-second intervals. |
 | R6 | Production DB state becomes inconsistent | Medium | High | Use versioned migrations, backups, integrity monitoring, and controlled ingestion workflows. |
 | R7 | Pub/Sub message ordering issues | Low | Medium | Use ordered delivery subscription for AI dispatch topic. Add `sequence_number` to event envelope. |
@@ -892,16 +874,16 @@ These must be addressed across all phases — not deferred to the end.
 | # | Question | Deadline | Owner |
 |---|---------|---------|-------|
 | Q1 | **Map library**: react-map-gl + MapLibre (free) or Mapbox GL JS (requires token)? | Before Phase 4 | Frontend Lead |
-| Q2 | **Prediction model**: Use Vertex AI custom model endpoint, or rely on Gaussian Plume fallback for hackathon? | Before Phase 6 | ML Lead |
+| Q2 | **Prediction model**: Vertex AI custom endpoint selected; provider unavailability returns HTTP 503. | Resolved | ML Lead |
 | Q3 | **Alert channels**: Is SMS via Twilio in scope? Requires account + credits. | Before Phase 7 | Backend Lead |
 | Q4 | **GCP project**: Is the GCP project already provisioned with billing enabled? Which region? | Before Phase 1 | DevOps Lead |
 | Q5 | **Auth**: Implement custom JWT auth (as scaffolded) or use Firebase Auth (simpler for hackathon)? | Before Phase 2 | Backend Lead |
 | Q6 | **Mobile app**: Is the scope web-only (responsive PWA) or does a React Native app need to be built? | Before Phase 4 | Product Lead |
 | Q7 | **Sensitive receptors data**: Do we have a public dataset of school/hospital coordinates for the target city? | Before Phase 6 | Data Lead |
-| Q8 | **Demo city**: Is the demo environment set up for Delhi? Or configurable at runtime? | Before Phase 8 | Product Lead |
+| Q8 | **Deployment region**: Configure operational geography through ingested production data; no hardcoded city. | Resolved | Product Lead |
 
 ---
 
-*Last updated: Phases 0–5 implementation complete. Next milestone: Phase 6 — Vertex AI Prediction & Risk Engine.*
+*Last updated: Phases 0–8 implementation complete. Next milestone: production environment validation and observability rollout.*
 
 *This roadmap is a living document. Update the phase status table and task checkboxes on every merge to `main`.*

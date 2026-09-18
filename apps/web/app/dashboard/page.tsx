@@ -2,12 +2,15 @@
 
 import Link from 'next/link';
 import {
+  Activity,
+  ArrowUpDown,
   ArrowUp,
   BellRing,
   Building2,
   CloudSun,
   Factory,
   Flame,
+  HeartPulse,
   Radio,
   Send,
   ShieldAlert,
@@ -15,10 +18,12 @@ import {
   Wind,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MapCanvas } from '@/features/map/MapCanvas';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, SeverityIndicator, StatusBadge } from '@/components/ui';
 import { useAlerts, useAnalytics, useHotspots, useIncidents, useObservations, usePredictions, useReports, useWeather } from '@/hooks/use-data';
-import type { Alert, CitizenReport, Observation } from '@/types/api';
+import { apiClient } from '@/lib/api-client';
+import type { Alert, CitizenReport, Incident, Observation } from '@/types/api';
 
 type Tone = 'green' | 'orange' | 'red' | 'blue' | 'violet';
 
@@ -100,6 +105,23 @@ function CriticalAlert({ alert }: { alert?: Alert }) {
   );
 }
 
+function AqiOperationsStrip({ readings }: { readings: Observation[] }) {
+  const live = readings.filter((item) => item.aqi != null).slice(0, 5);
+  const average = live.length ? Math.round(live.reduce((sum, item) => sum + (item.aqi ?? 0), 0) / live.length) : null;
+  const guidance = average == null ? 'Waiting for verified sensor observations.' : average <= 50 ? 'Outdoor activity is suitable for most people.' : average <= 100 ? 'Sensitive groups should monitor prolonged outdoor activity.' : average <= 200 ? 'Sensitive groups should reduce prolonged outdoor exertion.' : 'Limit outdoor exposure and follow active health advisories.';
+  return <section className="mt-3 grid gap-3 lg:grid-cols-[1.45fr_.8fr]"><div className="dashboard-panel overflow-hidden p-4"><div className="mb-3 flex items-center justify-between"><h2 className="panel-title flex items-center gap-2"><Activity size={15} className="text-emerald-400"/>Real-time AQI ticker</h2><span className="text-[9px] uppercase tracking-wider text-slate-500">Verified observations</span></div>{live.length ? <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">{live.map((item) => <article key={item.id} className="rounded-lg border border-slate-800 bg-[#04111d] px-3 py-2"><p className="truncate text-[9px] text-slate-500">{item.sensor_id}</p><p className="mt-1 font-mono text-xl font-bold text-white">{Math.round(item.aqi ?? 0)}</p><p className="text-[9px] text-emerald-400">AQI · {item.quality_flag ?? 'UNSPECIFIED'}</p></article>)}</div> : <p className="text-xs text-slate-500">No live AQI observations are available.</p>}</div><div className="dashboard-panel p-4"><h2 className="panel-title flex items-center gap-2"><HeartPulse size={15} className="text-rose-400"/>Health guidance</h2><p className="mt-3 text-sm leading-6 text-slate-300">{guidance}</p>{average != null && <p className="mt-2 text-[10px] text-slate-500">Based on current mean AQI {average}; follow local authority instructions.</p>}</div></section>;
+}
+
+function IncidentQueue({ items }: { items: Incident[] }) {
+  const client = useQueryClient();
+  const [sort, setSort] = useState<'severity' | 'status' | 'created_at'>('severity');
+  const [interventionType, setInterventionType] = useState('FIELD_INSPECTION');
+  const severityRank: Record<string, number> = { CRITICAL: 5, VERY_HIGH: 4, HIGH: 3, MODERATE: 2, LOW: 1 };
+  const sorted = [...items].filter((item) => !['RESOLVED', 'DISMISSED'].includes(item.status)).sort((left, right) => sort === 'severity' ? (severityRank[right.severity] ?? 0) - (severityRank[left.severity] ?? 0) : sort === 'created_at' ? Date.parse(right.updated_at) - Date.parse(left.updated_at) : left.status.localeCompare(right.status));
+  const dispatch = useMutation({ mutationFn: async (incident: Incident) => apiClient.request(`/incidents/${incident.id}/dispatch`, { method: 'POST', body: JSON.stringify({ intervention_type: interventionType, executing_agency: 'Municipal response team', action_summary: `Dispatched from command center for ${incident.title}` }) }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['incidents'] }); await client.invalidateQueries({ queryKey: ['interventions'] }); } });
+  return <section className="dashboard-panel mt-3 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="panel-title">Municipal incident queue</h2><p className="mt-1 text-[10px] text-slate-500">Prioritize and dispatch active incidents using persisted workflows.</p></div><div className="flex flex-wrap gap-2"><label className="flex items-center gap-1 text-[10px] text-slate-500"><ArrowUpDown size={12}/><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="rounded border border-slate-700 bg-[#030d17] px-2 py-1.5 text-slate-200"><option value="severity">Severity</option><option value="status">Status</option><option value="created_at">Last updated</option></select></label><select aria-label="Intervention type" value={interventionType} onChange={(event) => setInterventionType(event.target.value)} className="rounded border border-slate-700 bg-[#030d17] px-2 py-1.5 text-[10px] text-slate-200"><option value="FIELD_INSPECTION">Field inspection</option><option value="EMISSIONS_CONTROL">Emissions control</option><option value="ROAD_WATERING">Road watering</option><option value="PUBLIC_ADVISORY">Public advisory</option></select></div></div><div className="mt-3 overflow-x-auto">{sorted.length ? <table className="w-full min-w-[720px] text-left text-xs"><thead className="text-[10px] uppercase text-slate-500"><tr><th className="pb-2">Incident</th><th>Severity</th><th>Status</th><th>Created</th><th className="text-right">Action</th></tr></thead><tbody>{sorted.map((item) => <tr key={item.id} className="border-t border-slate-800"><td className="py-3 pr-3"><Link href={`/incidents/${item.id}`} className="font-medium text-slate-200 hover:text-emerald-300">{item.title}</Link></td><td><SeverityIndicator severity={item.severity}/></td><td><StatusBadge status={item.status}/></td><td className="text-slate-500">{new Date(item.created_at).toLocaleString()}</td><td className="text-right"><button disabled={dispatch.isPending || !['OPEN', 'INVESTIGATING'].includes(item.status)} onClick={() => dispatch.mutate(item)} className="rounded bg-emerald-500 px-3 py-1.5 text-[10px] font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40">Dispatch</button></td></tr>)}</tbody></table> : <p className="py-5 text-center text-xs text-slate-500">No active incidents require dispatch.</p>}</div>{dispatch.error && <p className="mt-3 text-xs text-red-300">{dispatch.error.message}</p>}</section>;
+}
+
 export default function DashboardPage() {
   const analytics = useAnalytics();
   const observations = useObservations();
@@ -134,6 +156,9 @@ export default function DashboardPage() {
         <TrendChart readings={readings} />
         <RecentReports items={reportQuery.data ?? []} />
       </div>
+
+      <AqiOperationsStrip readings={readings}/>
+      <IncidentQueue items={incidents.data ?? []}/>
 
       <footer className="mt-3 flex flex-col gap-3 rounded-xl border border-slate-800/80 bg-[#07131f] px-4 py-3 text-[10px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2"><span className="font-semibold text-slate-300">Data Sources</span><span className="flex gap-1.5"><CloudSun size={12}/>Satellite (GEE)</span><span className="flex gap-1.5"><Wind size={12}/>IMD Weather</span><span className="flex gap-1.5"><Radio size={12}/>IoT Sensors</span><span className="flex gap-1.5"><Users size={12}/>Citizen Reports</span></div>
