@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 from integrations.vertex_adapter import VertexAdapter
-from prediction.fallback_predictor import FallbackPredictor
 from repositories.predictions import PredictionRepository
 
 from models.entities import Prediction
@@ -10,7 +9,6 @@ from models.entities import Prediction
 class PredictionService:
     def __init__(self, repository: PredictionRepository):
         self.repository = repository
-        self.fallback = FallbackPredictor()
         self.vertex = VertexAdapter()
 
     async def generate_forecast(
@@ -23,8 +21,8 @@ class PredictionService:
                 value = await self.vertex.query_plume_prediction(
                     {"latitude": latitude, "longitude": longitude, "horizon_hours": horizon}
                 )
-            except Exception:
-                value = await self.fallback.predict(latitude, longitude, horizon)
+            except Exception as exc:
+                raise RuntimeError("Prediction provider is unavailable") from exc
             output.append(
                 await self.repository.create(
                     {

@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,12 +23,28 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@climax/types": ["../../packages/types/src"],
-      "@climax/ui": ["../../packages/ui/src"],
-      "@climax/utils": ["../../packages/utils/src"]
+      "@/*": [
+        "./*"
+      ],
+      "@climax/types": [
+        "../../packages/types/src"
+      ],
+      "@climax/ui": [
+        "../../packages/ui/src"
+      ],
+      "@climax/utils": [
+        "../../packages/utils/src"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next-dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

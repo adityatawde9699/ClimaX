@@ -9,10 +9,11 @@ from contextlib import asynccontextmanager
 
 import jwt
 from events.broker import broker
-from fastapi import FastAPI, Request, WebSocket, status
+from fastapi import FastAPI, Request, Response, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from observability.metrics import metrics_middleware, metrics_response
+from sqlalchemy.exc import SQLAlchemyError
 
 from api.v1.router import api_v1_router
 from core.config import settings
@@ -36,9 +37,9 @@ app = FastAPI(
         "Gemini multimodal intelligence, Vertex AI plume prediction, and municipal action."
     ),
     version=settings.VERSION,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json",
+    docs_url="/docs" if settings.ENABLE_API_DOCS else None,
+    redoc_url="/redoc" if settings.ENABLE_API_DOCS else None,
+    openapi_url="/openapi.json" if settings.ENABLE_API_DOCS else None,
     lifespan=lifespan,
 )
 
@@ -73,10 +74,64 @@ async def climax_exception_handler(request: Request, exc: ClimaxBaseException):
     )
 
 
+@app.exception_handler(ConnectionRefusedError)
+@app.exception_handler(SQLAlchemyError)
+async def database_exception_handler(
+    request: Request, exc: SQLAlchemyError | ConnectionRefusedError
+):
+    """Return an actionable response when PostgreSQL/PostGIS is unavailable.
+
+    Keeping database driver details out of the HTTP response avoids leaking the
+    connection configuration and prevents expected local-infrastructure outages
+    from appearing as an unhandled application error.
+    """
+    logger.warning(
+        "Database request failed: path=%s exception_type=%s",
+        request.url.path,
+        exc.__class__.__name__,
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception(
+        "Unhandled request failure: path=%s exception_type=%s",
+        request.url.path,
+        exc.__class__.__name__,
+    )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "success": False,
+            "error": {
+                "type": "InternalServerError",
+                "message": "An unexpected server error occurred.",
+                "details": None,
+            },
+        },
+    )
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "success": False,
+            "error": {
+                "type": "DatabaseUnavailable",
+                "message": (
+                    "Database service is unavailable. Start PostgreSQL/PostGIS "
+                    "and retry."
+                ),
+                "details": None,
+            },
+        },
+    )
+
+
 @app.get("/health", tags=["Health"])
-async def health_check():
+async def health_check(response: Response):
     """System health check endpoint, including database connectivity."""
     database_healthy = await database_is_healthy()
+    if not database_healthy:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
         "status": "healthy" if database_healthy else "degraded",
         "database": "healthy" if database_healthy else "unavailable",

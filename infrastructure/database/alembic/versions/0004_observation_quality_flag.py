@@ -1,14 +1,14 @@
 """add observation quality flag
 
 Revision ID: 0004_observation_quality_flag
-Revises: 0003_population_grid
+Revises: 0003
 """
 
 import sqlalchemy as sa
 from alembic import op
 
 revision = "0004_observation_quality_flag"
-down_revision = "0003_population_grid"
+down_revision = "0003"
 branch_labels = None
 depends_on = None
 

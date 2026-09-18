@@ -27,9 +27,12 @@ async def list_predictions(
         )
     ).all()
     if not data:
-        data = await PredictionService(PredictionRepository(db)).generate_forecast(
-            lat, lng, [horizon_hours]
-        )
+        try:
+            data = await PredictionService(PredictionRepository(db)).generate_forecast(
+                lat, lng, [horizon_hours]
+            )
+        except RuntimeError as exc:
+            raise HTTPException(503, "Prediction provider is not configured or unavailable") from exc
     return PaginatedResponse(
         data=[
             {

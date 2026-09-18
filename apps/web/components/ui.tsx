@@ -39,6 +39,10 @@ export function StatusBadge({ status }: { status: string }) {
 export function LoadingSkeleton({ className = '' }: { className?: string }) { return <div className={`animate-pulse rounded bg-slate-800 ${className}`} aria-label="Loading" />; }
 export function EmptyState({ icon, message, cta }: { icon: ReactNode; message: string; cta?: ReactNode }) { return <div className="rounded-lg border border-dashed border-climax-border p-8 text-center text-slate-400"><div className="mb-3 text-2xl">{icon}</div><p>{message}</p>{cta && <div className="mt-4">{cta}</div>}</div>; }
 
+export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: string; actions?: ReactNode }) {
+  return <header className="page-header"><div>{eyebrow && <p className="page-eyebrow">{eyebrow}</p>}<h1 className="page-title">{title}</h1>{description && <p className="page-description">{description}</p>}</div>{actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}</header>;
+}
+
 export function DataTable({ columns, rows }: { columns: string[]; rows: ReactNode[][] }) {
   const [sortBy, setSortBy] = useState(0); const [ascending, setAscending] = useState(true); const [page, setPage] = useState(0); const pageSize = 10;
   const sorted = useMemo(() => [...rows].sort((left, right) => `${left[sortBy]}`.localeCompare(`${right[sortBy]}`) * (ascending ? 1 : -1)), [rows, sortBy, ascending]);

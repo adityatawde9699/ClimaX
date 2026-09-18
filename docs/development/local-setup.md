@@ -10,8 +10,10 @@ Install Docker Compose v2, Python 3.11+, and Node.js 20+. Copy `.env.example` to
 ./scripts/setup-dev.sh
 cd infrastructure/docker
 docker compose up -d --build
-python ../../scripts/seed-db.py --env development
 ```
+
+The application starts with an empty database. Connect production ingestion sources or create
+records through authenticated API workflows; local setup does not insert synthetic records.
 
 Check the service health at `http://localhost:8000/health`, OpenAPI at `http://localhost:8000/docs`, and the web app at `http://localhost:3000`.
 

@@ -19,8 +19,6 @@ class TestArchitectureScaffolding(unittest.TestCase):
             "services/alerts",
             "services/analytics",
             "data/schemas",
-            "data/samples",
-            "data/fixtures",
             "infrastructure/docker",
             "infrastructure/gcp",
             "infrastructure/database",

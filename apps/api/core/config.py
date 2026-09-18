@@ -3,6 +3,7 @@ ClimaX Core Configuration Module
 Loads and validates environment configurations using Pydantic Settings.
 """
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +14,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
+    ENABLE_API_DOCS: bool = True
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     # Database
@@ -29,6 +31,7 @@ class Settings(BaseSettings):
     # Google Cloud & AI
     GCP_PROJECT_ID: str = "climax-prod-project-id"
     GCP_REGION: str = "us-central1"
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
     PUBSUB_EMULATOR_HOST: str = ""
     GCS_BUCKET: str = "climax-development"
     OPEN_METEO_BASE_URL: str = "https://api.open-meteo.com/v1/forecast"
@@ -45,6 +48,26 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = "development-secret-key-change-in-production-32-chars"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    AUTHORITY_REGISTRATION_CODE: str = ""
+
+    @model_validator(mode="after")
+    def validate_production_configuration(self):
+        if self.ENVIRONMENT.lower() != "production":
+            return self
+        problems = []
+        if self.DEBUG:
+            problems.append("DEBUG must be false")
+        if self.ENABLE_API_DOCS:
+            problems.append("ENABLE_API_DOCS must be false")
+        if self.JWT_SECRET_KEY == "development-secret-key-change-in-production-32-chars":
+            problems.append("JWT_SECRET_KEY must be replaced")
+        if "climax_dev_password" in self.DATABASE_URL or "climax_dev_password" in self.DATABASE_SYNC_URL:
+            problems.append("development database credentials must be replaced")
+        if any("localhost" in origin or "127.0.0.1" in origin for origin in self.CORS_ORIGINS):
+            problems.append("CORS_ORIGINS must contain only deployed origins")
+        if problems:
+            raise ValueError("Invalid production configuration: " + "; ".join(problems))
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

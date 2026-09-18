@@ -51,10 +51,8 @@ jobs:
       - name: Verify Architecture Scaffolding
         run: python3 scripts/verify-scaffolding.py
 
-      - name: Seed and test API
+      - name: Test API
         run: |
-          python scripts/seed-db.py --env development
-          python scripts/benchmark-spatial.py
           pytest tests/ --cov=apps/api/services --cov-fail-under=80
 
   validate-frontend:

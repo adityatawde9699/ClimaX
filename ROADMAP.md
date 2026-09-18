@@ -240,11 +240,10 @@ All scaffolding files are present and verified. No business logic has been imple
 - [ ] Verify PostGIS `Geometry` columns and spatial indexes are present after migration
 - [x] Add `alembic downgrade -1` smoke test to CI
 
-#### 1.3 Database Seeding
-- [x] Create `scripts/seed-db.py` that reads `data/fixtures/` and inserts seed records
-- [x] Seed: 3 Organizations, 10 Sensors, 2 DataSources
-- [x] Validate foreign key integrity through ordered inserts and database constraints
-- [x] Seed command: `python scripts/seed-db.py --env development`
+#### 1.3 Production Data Initialization
+- [x] Remove synthetic database seed records from deployable source
+- [x] Keep production initialization limited to versioned schema migrations
+- [x] Require records to originate from authenticated API or ingestion workflows
 
 #### 1.4 Python Environment
 - [x] Install dependencies: `pip install -e ".[dev]"` (or `uv sync`)
@@ -780,22 +779,16 @@ All AI outputs **must** carry:
   ```
 - [ ] Rehearse demo 3x with full team. Record backup video.
 
-#### 8.2 Demo Data Seeding
-- [x] Create `scripts/seed-demo.py`:
-  - 3 active incidents (OPEN, INVESTIGATING, DISPATCHED)
-  - 48 hours of historical sensor observations (believable PM2.5 spike at peak hours)
-  - 2 completed interventions with measurements showing -30% to -50% PM2.5
-  - 5 citizen reports in various statuses
-  - 1 pre-computed AI analysis with plume bounding box
-  - Pre-seeded predictions for next 72 hours
-- [x] Idempotent: running seed script twice doesn't create duplicates
+#### 8.2 Production Data Policy
+- [x] Remove demo incidents, observations, interventions, reports, analyses, and predictions
+- [x] Render explicit empty states until authenticated production data is ingested
 
 #### 8.3 GCP Production Deployment
 - [ ] Apply `infrastructure/gcp/cloud-run-api.yaml` and `cloud-run-web.yaml`
 - [ ] Configure Cloud Run environment variables from Secret Manager
 - [ ] Set up Cloud SQL (PostgreSQL 16) with PostGIS extension enabled
 - [ ] Configure Cloud Run min-instances=1 to avoid cold starts during demo
-- [ ] Run `scripts/seed-demo.py` against production DB
+- [ ] Verify the production database is empty before enabling ingestion
 
 #### 8.4 Observability
 - [x] Implement `observability/metrics.py`:
@@ -881,12 +874,12 @@ These must be addressed across all phases — not deferred to the end.
 
 | # | Risk | Probability | Impact | Mitigation |
 |---|------|------------|--------|-----------|
-| R1 | Vertex AI endpoint not provisioned in time | Medium | High | Implement Gaussian Plume Dispersion fallback (Phase 6.2). Switch is code-level, zero config change. |
-| R2 | Gemini API rate limits exceeded during demo | Low | Critical | Pre-compute AI analyses for demo data. Cache responses. Use Gemini Flash for non-critical calls. |
+| R1 | Vertex AI endpoint not provisioned in time | Medium | High | Return an explicit service-unavailable state; never substitute synthetic predictions. |
+| R2 | Gemini API rate limits exceeded | Low | Critical | Apply bounded retries, request budgets, and provider health monitoring. |
 | R3 | PostGIS spatial queries too slow at scale | Low | High | Add spatial indexes (`CREATE INDEX GIST`) in Phase 1. Benchmark in Phase 2 with 10k points. |
 | R4 | Earth Engine API authentication fails in demo | Medium | Medium | Pre-fetch and cache rasters in GCS. Serve from cache with graceful "live data unavailable" banner. |
 | R5 | WebSocket instability behind Cloud Run | Medium | Medium | Cloud Run supports WebSockets on HTTP/2. Fallback: long-polling with 5-second intervals. |
-| R6 | Demo DB state becomes inconsistent | Medium | High | Create idempotent `scripts/seed-demo.py`. Run 30 minutes before judging. Keep a DB snapshot in Cloud SQL. |
+| R6 | Production DB state becomes inconsistent | Medium | High | Use versioned migrations, backups, integrity monitoring, and controlled ingestion workflows. |
 | R7 | Pub/Sub message ordering issues | Low | Medium | Use ordered delivery subscription for AI dispatch topic. Add `sequence_number` to event envelope. |
 | R8 | GCS media upload fails for citizen reports | Low | Medium | Implement retry with exponential backoff. Pre-validate file type/size on client before upload. |
 | R9 | Shared contracts broken by isolated work | Medium | High | `packages/types` is the single source of truth. Add pre-commit hook that runs `npm run typecheck --workspace=@climax/types`. |

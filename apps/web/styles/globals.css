@@ -12,7 +12,11 @@
   --color-text-muted: #64748B;
 }
 
+html { color-scheme: dark; }
+
 body {
+  margin: 0;
+  min-width: 320px;
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -20,7 +24,36 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.input { @apply rounded-md border border-climax-border bg-climax-bg px-3 py-2 text-white outline-none transition focus:border-teal-400 focus:ring-1 focus:ring-teal-400; }
+::selection { background: rgba(16, 185, 129, .3); color: white; }
+
+.command-dashboard {
+  background:
+    radial-gradient(circle at 32% 10%, rgba(8, 75, 78, .10), transparent 32%),
+    linear-gradient(rgba(9, 30, 45, .13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(9, 30, 45, .13) 1px, transparent 1px),
+    #030d17;
+  background-size: auto, 32px 32px, 32px 32px, auto;
+}
+
+.dashboard-panel {
+  border: 1px solid rgba(51, 65, 85, .72);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(7, 24, 37, .97), rgba(4, 16, 28, .98));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .025), 0 8px 24px rgba(0, 0, 0, .14);
+}
+
+.panel-title { @apply text-sm font-semibold tracking-tight text-slate-100; }
+
+.page-wrap { @apply mx-auto w-full max-w-[1600px] p-4 pb-24 sm:p-6 lg:p-8 lg:pb-8; }
+.page-header { @apply mb-6 flex flex-col justify-between gap-4 border-b border-slate-800/80 pb-5 sm:flex-row sm:items-end; }
+.page-eyebrow { @apply text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-400; }
+.page-title { @apply mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl; }
+.page-description { @apply mt-2 max-w-2xl text-sm leading-6 text-slate-400; }
+.surface-panel { @apply rounded-xl border border-slate-800 bg-[#071521] shadow-[inset_0_1px_rgba(255,255,255,.025)]; }
+.input { @apply min-h-11 w-full rounded-lg border border-slate-700 bg-[#030d17] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15; }
+.field-label { @apply grid gap-2 text-xs font-medium text-slate-300; }
+.primary-button { @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50; }
+.secondary-button { @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-700 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-slate-600 hover:text-white; }
 .map-control { @apply rounded-md border border-climax-border bg-climax-surface p-2 text-slate-200 shadow-medium transition hover:bg-slate-800; }
 .map-grid { background-image: linear-gradient(rgba(67, 86, 118, .2) 1px, transparent 1px), linear-gradient(90deg, rgba(67, 86, 118, .2) 1px, transparent 1px); background-size: 36px 36px; }
 .map-heat { background-image: radial-gradient(circle at 30% 30%, rgba(239, 68, 68, .3), transparent 24%), radial-gradient(circle at 65% 55%, rgba(245, 158, 11, .28), transparent 28%), linear-gradient(rgba(67, 86, 118, .2) 1px, transparent 1px), linear-gradient(90deg, rgba(67, 86, 118, .2) 1px, transparent 1px); }

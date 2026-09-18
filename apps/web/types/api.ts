@@ -1,0 +1,13 @@
+export type Coordinates = { latitude: number; longitude: number };
+export type User = { id: string; email: string; full_name: string; role: string; organization_id?: string | null; preferred_language: string; is_active: boolean };
+export type Sensor = { id: string; external_sensor_id: string; sensor_type: string; model_name: string; location: Coordinates; is_active: boolean; is_calibrated: boolean; last_ping_at?: string | null };
+export type Observation = { id: string; sensor_id: string; timestamp: string; aqi?: number | null; pm25?: number | null; quality_flag?: string; wind_speed_kmh?: number | null; wind_direction_deg?: number | null };
+export type Incident = { id: string; title: string; status: string; severity: string; category: string; location: Coordinates; organization_id: string; assigned_officer_id?: string | null; risk_score?: number | null; created_at: string; resolved_at?: string | null };
+export type Alert = { id: string; title: string; message: string; severity: string; channel: string; is_dispatched: boolean; created_at: string; expires_at?: string | null };
+export type CitizenReport = { id: string; user_id?: string | null; location: Coordinates; address_text?: string | null; category: string; description: string; media_urls: string[]; status: string; incident_id?: string | null; created_at: string };
+export type Prediction = { id: string; latitude: number; longitude: number; horizon_hours: number; predicted_aqi: number; predicted_pm25: number; confidence_interval_low: number; confidence_interval_high: number; tier: string };
+export type RiskAssessment = { id: string; location: Coordinates; risk_score: number; severity: string; population_vulnerability_index: number; sensitive_receptors_count: number; dominant_pollutant: string; calculated_at: string };
+export type AnalyticsSummary = { observations: number; reports: number; incidents: number; alerts: number; interventions: number };
+export type Weather = { temperature_c?: number | null; humidity_percent?: number | null; wind_speed_kmh?: number | null; wind_direction_deg?: number | null };
+export type Intervention = { id: string; incident_id: string; intervention_type: string; executing_agency: string; action_summary: string; dispatched_at: string; executed_at?: string | null; completed_at?: string | null };
+export type AIAnalysis = { id: string; report_id?: string | null; tier: string; classification: string; suggested_severity: string; confidence_score: number; explanation: Record<string, unknown>; created_at: string };
