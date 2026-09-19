@@ -174,7 +174,9 @@ async def events(socket: WebSocket):
     try:
         while True:
             try:
-                await asyncio.wait_for(socket.receive_text(), timeout=30)
+                message = await asyncio.wait_for(socket.receive_text(), timeout=30)
+                if message == "disconnect":
+                    break
             except TimeoutError:
                 await socket.send_json({"event": "heartbeat"})
     except Exception:

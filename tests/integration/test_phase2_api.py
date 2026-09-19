@@ -9,8 +9,8 @@ from main import app
 from security.jwt import hash_password
 from sqlalchemy import select
 
-from core.database import AsyncSessionLocal, engine
 from core.config import settings
+from core.database import AsyncSessionLocal, engine
 from models.entities import DataSource, Incident, Organization, Sensor, User
 from services.risk_service import RiskService
 
@@ -193,6 +193,20 @@ async def test_authority_operational_flow(monkeypatch):
             },
         )
         assert alert.status_code == 200, alert.text
+        for seconds in (2, 3):
+            threshold_observation = await client.post(
+                "/api/v1/environment/observations",
+                headers=headers,
+                json={
+                    "sensor_id": sensor_id,
+                    "timestamp": (datetime.now(UTC) + timedelta(seconds=seconds)).isoformat(),
+                    "pm25": 180.0,
+                },
+            )
+            assert threshold_observation.status_code == 200, threshold_observation.text
+        threshold_alerts = await client.get("/api/v1/alerts/?severity=VERY_HIGH&active=true")
+        assert threshold_alerts.status_code == 200
+        assert threshold_alerts.json()["total"] == 1
         executed = await client.patch(
             f"/api/v1/interventions/{intervention_id}/status",
             headers=headers,

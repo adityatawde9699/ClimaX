@@ -1,272 +1,169 @@
-# ClimaX — Federated AI Environmental Intelligence & Action Platform
+# ClimaX
 
-[![Implementation Phase](https://img.shields.io/badge/Phases-0--8%20Implemented-success.svg)](#development-phases)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)](pyproject.toml)
+ClimaX is an environmental intelligence and response platform. It combines sensor observations, citizen reports, forecasts, risk assessments, and municipal interventions in one operational dashboard.
+
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab.svg)](pyproject.toml)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](apps/web)
-[![Google Cloud](https://img.shields.io/badge/Google_Cloud-Vertex_AI_%7C_Earth_Engine-4285F4.svg)](docs/architecture/system-architecture.md)
 
-> **Implementation status**: Phases 0–8 are implemented, including PostGIS migrations, JWT/RBAC security, CRUD routes, ingestion, AI/provider integrations, geospatial queries, the operational frontend, and production validation. Databases start empty; production records arrive only through authenticated APIs and configured ingestion services.
+> The application starts with an empty database. Production data is added through authenticated APIs and configured ingestion providers; no demo records are required at runtime.
 
----
+## What it does
 
-## 1. Executive Summary & Problem Space
+- Displays live environmental observations, AQI guidance, sensors, risk hotspots, predictions, incidents, alerts, and interventions.
+- Accepts citizen pollution reports with optional JPEG, PNG, WebP, or MP4 evidence uploaded through signed Google Cloud Storage URLs.
+- Creates incidents automatically for configured `VERY_HIGH` and `CRITICAL` risk assessments.
+- Dispatches and tracks interventions through an incident lifecycle:
 
-Air and environmental pollution represents one of the most pressing planetary emergencies of our century, causing over 7 million premature deaths annually and crippling urban economic productivity. Current municipal environmental monitoring systems suffer from three fatal structural limitations:
+  `OPEN → INVESTIGATING → DISPATCHED → MITIGATED → RESOLVED`
 
-1. **Severe Sensor Sparsity**: Physical reference-grade monitoring stations (e.g. BAM-1020) cost upwards of $30,000 each, resulting in vast urban and rural "blind zones" where hyper-local pollution spikes go completely undetected.
-2. **Disconnected Citizen Feedback**: Citizen complaints sent via social media or legacy municipal helplines lack structured geolocation, standardized pollutant categorization, and verifiable atmospheric context, creating noise rather than actionable intelligence.
-3. **Lagging Reactive Interventions**: Environmental departments operate reactively rather than predictively—dispatching sprinkler trucks, industrial inspectors, or traffic restrictions hours after hazardous plumes have already dispersed through population centers.
+- Streams operational events over an authenticated WebSocket and shows high-severity alert toasts in the web app.
+- Uses Redis as a best-effort cache for prediction responses and risk hotspots.
 
-**ClimaX** bridges this chasm by establishing a **Federated AI Environmental Intelligence and Action Platform**. It unifies ground-level citizen reports, multimodal visual imagery, IoT sensor meshes, government reference monitors, meteorological forecasts, and Earth observation satellite feeds into a continuous, closed-loop environmental command system.
-
----
-
-## 2. The Core Product Loop
-
-ClimaX operates on a cyclical, 6-stage closed-loop operational pipeline:
-
-```
-  ┌────────────────────────────────────────────────────────┐
-  │                        DETECT                          │
-  │  (Citizen Photos/Video, IoT Sensors, Satellite Feeds)  │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                      UNDERSTAND                        │
-  │  (Gemini Multimodal Analysis, Source Attribution,      │
-  │               Explainable Evidence)                    │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                       PREDICT                          │
-  │  (Vertex AI Spatio-temporal Plume Models, 6h-72h AQI)  │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                      PRIORITIZE                        │
-  │  (Environmental Risk Engine, Population Vulnerability) │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                         ACT                            │
-  │  (Incident Dispatch, Citizen Alerts, Task Assignment)  │
-  └───────────────────────────┬────────────────────────────┘
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │                       MEASURE                          │
-  │  (Pre/Post Intervention Delta, Causal Impact Metrics)  │
-  └───────────────────────────┬────────────────────────────┘
-                              │
-                              └───────► (Feeds back into DETECT)
-```
-
-1. **Detect**: Ingest continuous multi-source data across citizen mobile submissions, low-cost sensor networks, government APIs, and satellite imagery (Sentinel-5P / Landsat).
-2. **Understand**: Use Gemini 1.5 multimodal models to classify pollution sources (e.g. open biomass burning, diesel generator exhaust, road dust), extract visual evidence, and assess confidence.
-3. **Predict**: Forecast pollutant transport, dispersion, and AQI spikes across 6h, 24h, and 72h windows using atmospheric physics fused with Vertex AI sequence models.
-4. **Prioritize**: Calculate an objective composite Risk Index factoring in pollutant severity, wind trajectory, and demographic exposure (schools, hospitals, dense residential zones).
-5. **Act**: Convert high-priority risks into actionable municipal incidents, dispatching field enforcement units, anti-smog guns, or issuing localized citizen health advisories.
-6. **Measure**: Continuously track sensor readings and follow-up citizen verification post-intervention to quantify atmospheric improvement and validate municipal efficacy.
-
----
-
-## 3. Persona Journeys & Value Matrix
-
-ClimaX is purpose-engineered to serve four key stakeholder personas:
-
-| Stakeholder | Key Interfaces | Core Capabilities |
-| :--- | :--- | :--- |
-| **Citizens** | Mobile-responsive Web App (`/citizen`) | Real-time hyper-local air quality map, 1-tap photo/video incident reporting, AI-assisted symptom/exposure advisories, track municipal resolution progress. |
-| **Government / Municipal Authorities** | Environmental Command Center (`/command-center`) | Real-time spatial incident queue, AI-suggested field team assignments, before/after intervention impact measurement, automated compliance audits. |
-| **Environmental Researchers** | Data Explorer & Workspace (`/data-explorer`) | Direct access to historical BigQuery datasets, Earth Engine satellite rasters, spatial correlation tools, open data export (GeoJSON, NetCDF, CSV). |
-| **System Administrators** | Admin Portal (`/admin`) | Sensor telemetry monitoring, AI model drift tracking, role-based access control (RBAC), ingestion pipeline health, threshold configuration. |
-
----
-
-## 4. Core AI Concept: The 4-Tier Trust & Explainability Taxonomy
-
-In high-stakes environmental governance, ungrounded AI hallucination can trigger false municipal panic or unwarranted legal penalties against industrial facilities. ClimaX solves this through an architectural separation of information types:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. OBSERVED DATA                                                            │
-│    Physical, un-manipulated telemetry or direct citizen inputs.             │
-│    Examples: IoT Sensor PM2.5 = 186 µg/m³, Citizen uploaded photo.          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 2. AI INFERENCE                                                             │
-│    Probabilistic interpretations produced by vision or language models.     │
-│    Examples: "Possible tyre burning — 84% confidence (smoke plume detected)".│
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 3. PREDICTION                                                               │
-│    Forward-looking estimates produced by spatio-temporal predictive models. │
-│    Examples: "Predicted AQI at Ward 14 in 6 hours: 215 (Unhealthy)".        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 4. HUMAN VERIFICATION                                                       │
-│    Definitive ground truth recorded by certified municipal field officers.  │
-│    Examples: "Confirmed industrial boiler failure; ceased operations at 14:00"│
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-Every AI inference and prediction payload in ClimaX follows a standardized contract:
-```json
-{
-  "result": "Biomass burning detected",
-  "confidence": 0.88,
-  "evidence": ["Black smoke plume with localized ground ash texture in bounding box [120, 45, 340, 510]"],
-  "data_sources": ["citizen_upload:img_98124.jpg", "sensor:aq_del_12"],
-  "model": "gemini-1.5-pro-vision-climax-v1",
-  "timestamp": "2026-09-08T16:30:00Z",
-  "verification_status": "unverified"
-}
-```
-
----
-
-## 5. Technology Architecture Stack
-
-### Monolithic Clean Architecture (Modular Monolith)
-ClimaX avoids premature microservice overhead during MVP and hackathon execution, employing a strictly bounded **modular monolith** with clear package interfaces.
-
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│ FRONTEND: Next.js 16 App Router, React 18, TypeScript, Tailwind CSS       │
-│ (Feature-based: Command Center, Pollution Map, Citizen Portal, Data Studio)│
-└─────────────────────────────────────┬──────────────────────────────────────┘
-                                      │ REST API / WebSocket
-                                      ▼
-┌────────────────────────────────────────────────────────────────────────────┐
-│ BACKEND: Python 3.11+ / FastAPI Modular Monolith                           │
-│ (Clean Architecture: API Routes → Domain Services → Repositories → DB)     │
-└───────────────────────┬───────────────────────────────┬────────────────────┘
-                        │                               │
-                        ▼                               ▼
-┌───────────────────────────────────┐   ┌────────────────────────────────────┐
-│ DATABASE & SPATIAL ENGINE         │   │ GOOGLE CLOUD & AI FOUNDATION       │
-│ • PostgreSQL 16 + PostGIS         │   │ • Gemini 1.5 Pro & Flash (Vision)  │
-│ • Spatial R-Tree Indexing         │   │ • Vertex AI Custom Endpoints       │
-│ • Temporal TimescaleDB Partitions │   │ • Google Earth Engine API          │
-│ • AsyncPG + SQLAlchemy 2.0        │   │ • BigQuery Environmental Warehouse │
-│                                   │   │ • Google Maps Platform             │
-│                                   │   │ • Cloud Storage & Cloud Pub/Sub    │
-└───────────────────────────────────┘   └────────────────────────────────────┘
-```
-
----
-
-## 6. Repository Directory Structure
+## Architecture
 
 ```text
-climax/
-├── apps/
-│   ├── web/                    # Next.js 16 frontend application (Citizen & Authority UI)
-│   │   ├── app/                # App router route groups: (citizen), (authority), (admin)
-│   │   ├── components/         # Shared UI, layout, map controls, feedback components
-│   │   ├── features/           # Feature boundaries (command-center, incidents, predictions...)
-│   │   ├── hooks/              # Custom React hooks (useGeolocation, usePollutionData)
-│   │   ├── lib/                # Client utility libraries & API client
-│   │   ├── styles/             # Tailwind & design system token definitions
-│   │   └── types/              # Frontend-specific type augmentations
-│   └── api/                    # FastAPI Backend application
-│       ├── api/v1/             # Versioned REST router endpoints
-│       ├── core/               # App configuration, logging, exceptions, middleware
-│       ├── models/             # SQLAlchemy / SQLModel ORM entity declarations
-│       ├── schemas/            # Pydantic v2 DTO request & response contracts
-│       ├── repositories/       # Data access interfaces & query builders
-│       ├── services/           # Domain business logic contracts
-│       ├── integrations/       # External adapters (GCP, Gemini, Maps, Weather)
-│       ├── ai/                 # Gemini multimodal, reasoning, and copilot contracts
-│       ├── prediction/         # Vertex AI prediction client contracts
-│       ├── geospatial/         # PostGIS queries, GeoJSON parsers, spatial buffers
-│       ├── events/             # Cloud Pub/Sub event publishers & subscribers
-│       ├── workers/            # Background tasks & batch ingestion
-│       ├── security/           # JWT, RBAC guards, PII redaction, sanitization
-│       └── observability/      # OpenTelemetry, Prometheus metrics, structured logs
-├── packages/                   # Reusable shared monorepo packages
-│   ├── ui/                     # Government-grade headless design tokens & components
-│   ├── types/                  # Canonical TypeScript entity interfaces & AI contracts
-│   ├── config/                 # Shared Tailwind, ESLint, Prettier, TS configurations
-│   └── utils/                  # Shared geospatial math, date formatters, sanitizers
-├── services/                   # Independent service boundaries
-│   ├── ai/                     # Multimodal prompts, vision pipelines, reasoning
-│   ├── prediction/             # Spatio-temporal dispersion & ML models
-│   ├── geospatial/             # GeoTIFF processing, Earth Engine raster pipelines
-│   ├── environmental-data/     # IoT ingestion, CPCB/EPA government connectors
-│   ├── alerts/                 # Multi-channel notification routing & SMS/Push
-│   └── analytics/              # BigQuery aggregation & reporting pipelines
-├── data/                       # Schemas and production data policy
-│   └── schemas/                # Canonical JSON Schema specifications
-├── infrastructure/             # Deployment & cloud configuration
-│   ├── docker/                 # Container definitions & local docker-compose
-│   ├── gcp/                    # Cloud Run configs, BigQuery DDL, Pub/Sub manifests
-│   ├── database/               # PostgreSQL + PostGIS migrations & SQL schema
-│   └── deployment/             # CI/CD workflow manifests
-├── docs/                       # Comprehensive technical & product documentation
-│   ├── architecture/           # System, frontend, backend, AI, data, geospatial, security
-│   ├── product/                # Product mission, user roles, persona journeys
-│   ├── ai/                     # Trust, explainability, 4-tier taxonomy, confidence scoring
-│   ├── data/                   # Data sources catalog, ingestion specs, licensing
-│   └── decisions/              # Architecture Decision Records (ADRs)
-├── scripts/                    # Development & verification utility scripts
-├── tests/                      # Architecture, integration, and E2E test suites
-├── .env.example                # Exhaustive environment variable template
-├── .gitignore                  # Standardized VCS ignore rules
-├── package.json                # Monorepo root workspace manifest
-├── pyproject.toml              # Root Python tooling & dependency specification
-├── ruff.toml                   # Python linting & formatting standards
-├── CONTRIBUTING.md             # Contribution & development standards
-└── LICENSE                     # Apache 2.0 Open Source License
+Next.js web app ── REST / WebSocket ── FastAPI API
+                                          │
+                             ┌────────────┼────────────┐
+                             │            │            │
+                         PostGIS       Redis       GCP adapters
+                      data + spatial   cache     GCS · Pub/Sub
+                                                   Gemini · Vertex
 ```
 
----
+The repository is a modular monolith: API routers handle transport, services hold domain rules, repositories handle persistence, and integrations isolate cloud providers.
 
-## 7. Development Roadmap
+## Repository layout
 
-Phases 0–8 are implemented. The authoritative status, completed checklist, and remaining external deployment work are maintained in [ROADMAP.md](ROADMAP.md).
+```text
+apps/api/                 FastAPI application, models, services, and adapters
+apps/web/                 Next.js dashboard and citizen reporting UI
+packages/                 Shared TypeScript packages
+services/                 Provider and domain service boundaries
+infrastructure/database/  SQL schema and Alembic migrations
+infrastructure/docker/    Local PostGIS, Redis, API, and web containers
+infrastructure/gcp/       Cloud Run, Pub/Sub, and GCP deployment manifests
+docs/                     Architecture, product, API, and deployment guides
+scripts/                  Validation, load-test, and operational utilities
+tests/                    Unit, integration, and browser tests
+```
 
----
+## Quick start
 
-## 8. Local Setup
+### Prerequisites
 
-1. **System Dependencies**:
-   - Node.js 20.x or later
-   - Python 3.11 or later
-   - Docker & Docker Compose
-2. **Environment File**:
-   ```bash
-   cp .env.example .env
-   # Set secure local credentials and only the providers you intend to exercise.
-   ```
-3. **Start PostgreSQL/PostGIS and Redis**:
-   ```bash
-   docker compose -f infrastructure/docker/docker-compose.yml up -d postgres redis
-   alembic -c infrastructure/database/alembic.ini upgrade head
-   ```
-4. **Run the applications**:
-   ```bash
-   npm run dev:api
-   npm run dev:web
-   ```
-5. **Verify the codebase**:
-   ```bash
-   python3 scripts/verify-scaffolding.py
-   ```
+- Node.js 20+
+- Python 3.11+
+- Docker and Docker Compose
 
----
+### 1. Install dependencies
 
-## 9. Architectural Documentation Index
+```bash
+cp .env.example .env
+npm install
+python3 -m pip install -e ".[dev]"
+```
 
-| Topic | Document Path |
-| :--- | :--- |
-| **System Architecture** | [system-architecture.md](docs/architecture/system-architecture.md) |
-| **Frontend Architecture** | [frontend-architecture.md](docs/architecture/frontend-architecture.md) |
-| **Backend Architecture** | [backend-architecture.md](docs/architecture/backend-architecture.md) |
-| **AI Architecture** | [ai-architecture.md](docs/architecture/ai-architecture.md) |
-| **Data Architecture** | [data-architecture.md](docs/architecture/data-architecture.md) |
-| **Geospatial Architecture** | [geospatial-architecture.md](docs/architecture/geospatial-architecture.md) |
-| **Security & Privacy** | [security.md](docs/architecture/security.md) |
-| **Observability & Metrics** | [observability.md](docs/architecture/observability.md) |
-| **Product Overview** | [product-overview.md](docs/product/product-overview.md) |
-| **User Roles & Personas** | [user-roles.md](docs/product/user-roles.md) |
-| **Trust & Explainability** | [trust-and-explainability.md](docs/ai/trust-and-explainability.md) |
-| **Data Sources Catalog** | [data-sources.md](docs/data/data-sources.md) |
-| **Architecture Decision Records** | [decisions/README.md](docs/decisions/README.md) |
+If pip reports `resolution-too-deep`, install the project with a current Python 3.11–3.13 environment and upgrade pip first:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+```
+
+### 2. Start local infrastructure
+
+```bash
+docker compose -f infrastructure/docker/docker-compose.yml up -d postgres redis
+alembic -c infrastructure/database/alembic.ini upgrade head
+```
+
+The local database is PostgreSQL 16 with PostGIS. The compose file exposes PostgreSQL on `5432` and Redis on `6379`.
+
+### 3. Start the API and web app
+
+Use two terminals:
+
+```bash
+npm run dev:api      # http://127.0.0.1:8000
+npm run dev:web      # http://127.0.0.1:3000
+```
+
+The API documentation is available at `http://127.0.0.1:8000/docs` when `ENABLE_API_DOCS=true`.
+
+### 4. Create an account
+
+Open `http://127.0.0.1:3000/register` and create a local account. Manual email/password login is available at `/login`. Google login requires the OAuth variables in `.env` and a matching callback configuration in Google Cloud.
+
+## Useful commands
+
+```bash
+# Backend checks
+ruff check apps/api services scripts tests infrastructure/database/alembic
+PYTHONPATH=apps/api pytest -q
+
+# Frontend checks
+npm run lint:web
+npm run typecheck:web
+npm run build:web
+
+# Mobile browser validation at 375px
+npx playwright install chromium
+npm run test:e2e
+
+# Dependency security check
+npm audit --omit=dev
+```
+
+For a running web server on another port, reuse it during browser tests:
+
+```bash
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run test:e2e
+```
+
+## Configuration
+
+`.env.example` documents all supported settings. The most important local values are:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Async SQLAlchemy connection string |
+| `DATABASE_SYNC_URL` | Alembic and synchronous tooling connection string |
+| `REDIS_URL` | Optional response cache; cache failures fail open |
+| `JWT_SECRET_KEY` | Local JWT signing key; use a secret of at least 32 bytes |
+| `CORS_ORIGINS` | JSON array of allowed web origins |
+| `GCS_BUCKET` | Bucket for citizen report evidence |
+| `GOOGLE_OAUTH_CLIENT_ID` | API OAuth client identifier |
+| `NEXT_PUBLIC_API_URL` | Browser-facing API base URL |
+| `RISK_AUTO_INCIDENT_ORGANIZATION_ID` | Authority organization for automatic risk incidents |
+
+Provider-backed features such as Gemini, Vertex AI, Earth Engine, Pub/Sub, and GCS return explicit configuration errors when credentials are absent; they do not silently generate synthetic production data.
+
+## Production validation
+
+The deployment checklist is in [docs/deployment/production-checklist.md](docs/deployment/production-checklist.md). After deploying the API, run the non-mutating HTTP and WebSocket smoke probe with an authenticated token:
+
+```bash
+CLIMAX_PRODUCTION_URL=https://api.example.com \
+CLIMAX_SMOKE_TOKEN='<jwt>' \
+python scripts/validate-production.py
+```
+
+Cloud-only tasks still require access to the target project: applying Cloud Run and Pub/Sub manifests, configuring Secret Manager and Cloud SQL, granting service-account IAM roles, enabling SMS/push providers, and configuring Cloud Monitoring alerts.
+
+## Documentation
+
+- [Local development](docs/development/local-setup.md)
+- [API guide](docs/api/README.md)
+- [System architecture](docs/architecture/system-architecture.md)
+- [Backend architecture](docs/architecture/backend-architecture.md)
+- [Frontend architecture](docs/architecture/frontend-architecture.md)
+- [Security and privacy](docs/architecture/security.md)
+- [Production checklist](docs/deployment/production-checklist.md)
+- [Roadmap and implementation status](ROADMAP.md)
+- [Contributing](CONTRIBUTING.md)
+
+## License
+
+ClimaX is licensed under the Apache License 2.0. See [LICENSE](LICENSE).

@@ -34,6 +34,7 @@ async def evaluate_risk(
     if cached is not None:
         return ApiResponse(data=cached)
     data = serialize(await RiskService().evaluate(db, lat, lng))
+    await cache.delete_pattern("risk:hotspots")
     await cache.set(cache_key, data, settings.RISK_CACHE_TTL_SECONDS)
     return ApiResponse(data=data)
 

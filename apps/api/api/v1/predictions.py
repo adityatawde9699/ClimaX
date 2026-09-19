@@ -43,7 +43,11 @@ async def list_predictions(
     data = (
         await db.scalars(
             select(Prediction)
-            .where(Prediction.horizon_hours == horizon_hours)
+            .where(
+                Prediction.horizon_hours == horizon_hours,
+                Prediction.latitude.between(lat - 0.1, lat + 0.1),
+                Prediction.longitude.between(lng - 0.1, lng + 0.1),
+            )
             .order_by(Prediction.created_at.desc())
             .limit(100)
         )
@@ -53,6 +57,7 @@ async def list_predictions(
             data = await PredictionService(PredictionRepository(db)).generate_forecast(
                 lat, lng, [horizon_hours]
             )
+            await db.commit()
         except RuntimeError as exc:
             raise HTTPException(503, "Prediction provider is not configured or unavailable") from exc
     serialized = [serialize_prediction(item) for item in data]

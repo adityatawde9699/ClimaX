@@ -7,7 +7,9 @@ Implementation scheduled for Phase 3.
 from datetime import datetime
 from uuid import uuid4
 
+from events.broker import broker
 from fastapi import APIRouter, Depends, Query
+from repositories.alerts import AlertRepository
 from security.jwt import require_roles
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +18,7 @@ from core.database import get_db
 from models.entities import EnvironmentalObservation
 from schemas.base import ApiResponse, PaginatedResponse
 from schemas.entities import EnvironmentalObservationCreate, EnvironmentalObservationRead
+from services.alert_service import AlertService
 
 router = APIRouter(prefix="/environment", tags=["Environment & Telemetry"])
 
@@ -28,8 +31,20 @@ async def create_observation(
 ):
     observation = EnvironmentalObservation(id=str(uuid4()), **payload.model_dump())
     db.add(observation)
+    alert = None
+    if payload.pm25 is not None:
+        alert = await AlertService(AlertRepository(db)).create_pm25_threshold_alert(
+            sensor_id=payload.sensor_id,
+            pm25=payload.pm25,
+        )
     await db.commit()
     await db.refresh(observation)
+    await broker.publish(
+        "observation.ingested",
+        {"id": observation.id, "sensor_id": observation.sensor_id, "aqi": observation.aqi},
+    )
+    if alert is not None:
+        await broker.publish("alert.dispatched", {"id": alert.id, "severity": alert.severity})
     return ApiResponse(data=observation)
 
 

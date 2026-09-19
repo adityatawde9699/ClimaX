@@ -71,3 +71,7 @@ local_data/
 uploads/
 tmp/
 scratch/
+
+# Browser test artifacts
+test-results/
+playwright-report/

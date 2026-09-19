@@ -24,6 +24,12 @@ from schemas.entities import CitizenReportCreate, CitizenReportRead
 router = APIRouter(prefix="/reports", tags=["Citizen Reports"])
 
 ALLOWED_REPORT_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp", "video/mp4"}
+ALLOWED_REPORT_EXTENSIONS = {
+    "image/jpeg": {".jpg", ".jpeg"},
+    "image/png": {".png"},
+    "image/webp": {".webp"},
+    "video/mp4": {".mp4"},
+}
 
 
 class ReportUploadRequest(BaseModel):
@@ -105,9 +111,11 @@ async def create_report_upload_url(
 ):
     if payload.content_type not in ALLOWED_REPORT_MEDIA_TYPES:
         raise HTTPException(422, "Unsupported report media type")
+    extension = Path(payload.filename).suffix.lower()
+    if extension not in ALLOWED_REPORT_EXTENSIONS[payload.content_type]:
+        raise HTTPException(422, "Filename extension does not match the report media type")
     if payload.size_bytes > settings.MAX_REPORT_UPLOAD_BYTES:
         raise HTTPException(413, "Report media exceeds the configured upload limit")
-    extension = Path(payload.filename).suffix.lower()
     object_name = f"citizen-reports/{user.id}/{uuid4()}{extension}"
     try:
         upload_url = await run_in_threadpool(
