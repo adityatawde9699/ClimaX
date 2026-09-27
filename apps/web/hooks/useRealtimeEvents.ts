@@ -5,6 +5,9 @@ import { useEffect, useState } from 'react';
 export function useRealtimeEvents() {
   const [events, setEvents] = useState<{ event: string; data?: Record<string, unknown> }[]>([]);
   useEffect(() => {
+    // The demo API runs as independent functions; its in-memory event broker
+    // cannot broadcast across instances. Demo screens use normal API polling.
+    if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') return;
     const token = window.localStorage.getItem('climax_access_token');
     if (!token) return;
     const base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').replace('/api/v1', '').replace('http', 'ws');

@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-ROOT_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
+API_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
 class Settings(BaseSettings):
@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
     ENABLE_API_DOCS: bool = True
+    ENABLE_DEMO_LOGIN: bool = False
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     # Database
@@ -60,13 +61,18 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_configuration(self):
-        if self.ENVIRONMENT.lower() != "production":
+        environment = self.ENVIRONMENT.lower()
+        if environment not in {"production", "demo"}:
             return self
         problems = []
         if self.DEBUG:
             problems.append("DEBUG must be false")
         if self.ENABLE_API_DOCS:
             problems.append("ENABLE_API_DOCS must be false")
+        if environment == "production" and self.ENABLE_DEMO_LOGIN:
+            problems.append("ENABLE_DEMO_LOGIN must be false")
+        if environment == "demo" and not self.ENABLE_DEMO_LOGIN:
+            problems.append("ENABLE_DEMO_LOGIN must be true for the demo environment")
         if (
             self.JWT_SECRET_KEY == "development-secret-key-change-in-production-32-chars"
             or len(self.JWT_SECRET_KEY) < 32
@@ -81,7 +87,7 @@ class Settings(BaseSettings):
         return self
 
     model_config = SettingsConfigDict(
-        env_file=ROOT_ENV_FILE,
+        env_file=API_ENV_FILE,
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore",

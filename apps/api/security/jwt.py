@@ -14,6 +14,11 @@ from core.database import get_db
 from models.entities import User
 
 bearer = HTTPBearer(auto_error=False)
+DEMO_ACCOUNT_EMAILS = frozenset({
+    "demo@climax.local",
+    "authority@climax.local",
+    "researcher@climax.local",
+})
 
 
 def hash_password(password: str) -> str:
@@ -46,7 +51,9 @@ async def get_current_user(
         user = await db.get(User, payload["sub"])
     except (jwt.PyJWTError, KeyError):
         user = None
-    if user is None or not user.is_active:
+    if user is None or not user.is_active or (
+        settings.ENVIRONMENT.lower() == "production" and user.email.lower() in DEMO_ACCOUNT_EMAILS
+    ):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid authentication token")
     return user
 

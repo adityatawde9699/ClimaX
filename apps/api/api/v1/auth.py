@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from pydantic import BaseModel
-from security.jwt import create_access_token, hash_password, verify_password
+from security.jwt import DEMO_ACCOUNT_EMAILS, create_access_token, hash_password, verify_password
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,12 +14,36 @@ from core.config import settings
 from core.database import get_db
 from models.entities import User
 from schemas.auth import LoginRequest, RegisterRequest, TokenResponse
+from schemas.entities import UserRole
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+DEMO_EMAILS = {
+    UserRole.CITIZEN: "demo@climax.local",
+    UserRole.AUTHORITY: "authority@climax.local",
+    UserRole.RESEARCHER: "researcher@climax.local",
+}
 
 
 class GoogleLoginRequest(BaseModel):
     credential: str
+
+
+class DemoLoginRequest(BaseModel):
+    role: UserRole
+
+
+@router.post("/demo", response_model=TokenResponse)
+async def demo_login(payload: DemoLoginRequest, db: AsyncSession = Depends(get_db)):
+    if not settings.ENABLE_DEMO_LOGIN or settings.ENVIRONMENT.lower() == "production":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
+    email = DEMO_EMAILS.get(payload.role)
+    if email is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Unsupported demo role")
+    user = await db.scalar(select(User).where(User.email == email))
+    if user is None or not user.is_active or user.role != payload.role.value:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Demo account is not ready")
+    return TokenResponse(access_token=create_access_token(user))
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -58,6 +82,8 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db))
 
 @router.post("/login", response_model=TokenResponse)
 async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
+    if settings.ENVIRONMENT.lower() == "production" and payload.email.lower() in DEMO_ACCOUNT_EMAILS:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
     user = await db.scalar(select(User).where(User.email == payload.email))
     if user is None or not user.password_hash or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
@@ -81,6 +107,8 @@ async def google_login(payload: GoogleLoginRequest, db: AsyncSession = Depends(g
     email = claims.get("email")
     if not email or not claims.get("email_verified"):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Google email is not verified")
+    if settings.ENVIRONMENT.lower() == "production" and email.lower() in DEMO_ACCOUNT_EMAILS:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid Google identity token")
     google_sub = claims.get("sub")
     if not google_sub:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Google account identifier is missing")

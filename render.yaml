@@ -1,0 +1,37 @@
+# Public demo API only. Point DATABASE_URL and DATABASE_SYNC_URL at an
+# isolated demo PostGIS database/branch, never the live production database.
+services:
+  - type: web
+    name: climax-demo-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerContext: .
+    dockerfilePath: infrastructure/docker/Dockerfile.api
+    dockerCommand: sh /app/scripts/start-render-demo.sh
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: demo
+      - key: DEBUG
+        value: "false"
+      - key: ENABLE_API_DOCS
+        value: "false"
+      - key: ENABLE_DEMO_LOGIN
+        value: "true"
+      - key: DB_POOL_SIZE
+        value: "5"
+      - key: DB_MAX_OVERFLOW
+        value: "2"
+      - key: DB_TIMEOUT_SECONDS
+        value: "10"
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SYNC_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true

@@ -31,6 +31,7 @@ class ConfidenceTier(str, Enum):
 
 
 class PollutionCategory(str, Enum):
+    SMOKE_OR_ODOR = "SMOKE_OR_ODOR"  # Legacy reports may use this category.
     BIOMASS_BURNING = "BIOMASS_BURNING"
     INDUSTRIAL_EMISSION = "INDUSTRIAL_EMISSION"
     VEHICULAR_CONGESTION = "VEHICULAR_CONGESTION"

@@ -32,7 +32,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - path: ../../.env
+      - path: ../../apps/api/.env
         required: false
     environment:
       - DB_HOST=postgres
@@ -81,6 +81,9 @@ services:
     build:
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
     container_name: climax-web
     restart: unless-stopped
     depends_on:
@@ -88,10 +91,6 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-    volumes:
-      - ../../apps/web:/app/apps/web
 
 volumes:
   postgres_data:

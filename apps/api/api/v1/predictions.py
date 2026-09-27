@@ -59,6 +59,8 @@ async def list_predictions(
             )
             await db.commit()
         except RuntimeError as exc:
+            if settings.ENVIRONMENT.lower() in {"development", "demo"}:
+                return PaginatedResponse(data=[], total=0)
             raise HTTPException(503, "Prediction provider is not configured or unavailable") from exc
     serialized = [serialize_prediction(item) for item in data]
     await cache.set(cache_key, serialized, settings.PREDICTION_CACHE_TTL_SECONDS)

@@ -12,13 +12,14 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
 # 1. Environment template check
-if [ ! -f .env ]; then
-  echo "Copying .env.example to .env..."
-  cp .env.example .env
-  echo "Created .env. Please configure your GCP & database settings."
-else
-  echo ".env already exists."
-fi
+for app in api web; do
+  if [ ! -f "apps/${app}/.env" ]; then
+    cp "apps/${app}/.env.example" "apps/${app}/.env"
+    echo "Created apps/${app}/.env. Configure it for your environment."
+  else
+    echo "apps/${app}/.env already exists."
+  fi
+done
 
 # 2. Python Virtual Environment
 if [ ! -d .venv ]; then
@@ -41,4 +42,4 @@ echo "Running scaffolding verification..."
 python3 scripts/verify-scaffolding.py
 
 echo ""
-echo "Setup complete! Start local services with: cd infrastructure/docker && docker compose up -d --build"
+echo "Setup complete! Start local services with: docker compose --env-file apps/web/.env -f infrastructure/docker/docker-compose.yml up -d --build"

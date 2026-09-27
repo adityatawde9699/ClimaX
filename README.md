@@ -8,6 +8,10 @@ ClimaX is an environmental intelligence and response platform. It combines senso
 
 > The application starts with an empty database. Production data is added through authenticated APIs and configured ingestion providers; no demo records are required at runtime.
 
+For a repeatable local walkthrough with sample data and Citizen, Authority, and Researcher sign-in buttons, see [Demo with sample data](docs/development/local-setup.md#demo-with-sample-data).
+For both the API and web app on Vercel, see [Vercel full demo deployment](docs/deployment/vercel-full-demo.md).
+For a public demo with the API on Render and the web app on Vercel, see [Render + Vercel demo deployment](docs/deployment/render-vercel-demo.md).
+
 ## What it does
 
 - Displays live environmental observations, AQI guidance, sensors, risk hotspots, predictions, incidents, alerts, and interventions.
@@ -60,7 +64,8 @@ tests/                    Unit, integration, and browser tests
 ### 1. Install dependencies
 
 ```bash
-cp .env.example .env
+cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
 npm install
 python3 -m pip install -e ".[dev]"
 ```
@@ -94,7 +99,7 @@ The API documentation is available at `http://127.0.0.1:8000/docs` when `ENABLE_
 
 ### 4. Create an account
 
-Open `http://127.0.0.1:3000/register` and create a local account. Manual email/password login is available at `/login`. Google login requires the OAuth variables in `.env` and a matching callback configuration in Google Cloud.
+Open `http://127.0.0.1:3000/register` and create a local account. Manual email/password login is available at `/login`. Google login requires matching OAuth client IDs in `apps/api/.env` and `apps/web/.env`, plus a matching callback configuration in Google Cloud.
 
 ## Useful commands
 
@@ -124,7 +129,7 @@ PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run test:e2e
 
 ## Configuration
 
-`.env.example` documents all supported settings. The most important local values are:
+`apps/api/.env.example` and `apps/web/.env.example` document each service's settings. The most important local values are:
 
 | Variable | Purpose |
 | --- | --- |
@@ -161,6 +166,7 @@ Cloud-only tasks still require access to the target project: applying Cloud Run 
 - [Frontend architecture](docs/architecture/frontend-architecture.md)
 - [Security and privacy](docs/architecture/security.md)
 - [Production checklist](docs/deployment/production-checklist.md)
+- [Separate frontend and API deployments](docs/deployment/separate-services.md)
 - [Roadmap and implementation status](ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)
 

@@ -23,6 +23,7 @@ import {
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useAlerts, useCurrentUser } from '@/hooks/use-data';
 import { readTokenRole } from '@/lib/auth';
+import { useQueryClient } from '@tanstack/react-query';
 
 const navigation = [
   { href: '/dashboard', label: 'Live Overview', icon: Home, roles: ['AUTHORITY', 'ADMIN'] },
@@ -56,6 +57,7 @@ const getServerAuthToken = () => null;
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
   const token = useSyncExternalStore(subscribeToAuth, getAuthToken, getServerAuthToken);
@@ -99,7 +101,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href="/alerts" className="relative rounded-lg p-2 text-slate-300 hover:bg-slate-800" aria-label="Notifications"><Bell size={18}/>{Boolean(alerts.data?.length) && <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-0.5 text-[8px] font-bold text-white">{alerts.data?.length}</span>}</Link>
           <Link href="/settings" className="hidden items-center gap-2 border-l border-slate-800 pl-4 text-xs text-slate-300 sm:flex"><Languages size={17}/><span>EN</span><ChevronDown size={13}/></Link>
           <div className="hidden h-9 w-px bg-slate-800 md:block" />
-          <div className="hidden items-center gap-2 md:flex"><span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-slate-200 to-slate-500 text-xs font-bold text-slate-900">{user.data?.full_name?.[0] || '?'}</span><span><strong className="block text-[11px] text-white">{user.data?.full_name || 'Signed-in user'}</strong><small className="block max-w-[115px] truncate text-[9px] text-slate-500">{user.data?.email || 'Profile loading'}</small></span><button title="Sign out" onClick={() => { window.localStorage.removeItem('climax_access_token'); window.dispatchEvent(new Event('climax-auth')); router.replace('/login'); }} className="rounded p-1.5 text-slate-500 hover:bg-slate-800 hover:text-white"><LogOut size={14}/></button></div>
+          {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && <span className="hidden rounded border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] font-semibold text-amber-200 sm:block">Demo data</span>}
+          <div className="hidden items-center gap-2 md:flex"><span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-slate-200 to-slate-500 text-xs font-bold text-slate-900">{user.data?.full_name?.[0] || '?'}</span><span><strong className="block text-[11px] text-white">{user.data?.full_name || 'Signed-in user'}</strong><small className="block max-w-[115px] truncate text-[9px] text-slate-500">{user.data?.email || 'Profile loading'}</small></span><button title="Sign out" onClick={() => { queryClient.clear(); window.localStorage.removeItem('climax_access_token'); window.dispatchEvent(new Event('climax-auth')); router.replace('/login'); }} className="rounded p-1.5 text-slate-500 hover:bg-slate-800 hover:text-white"><LogOut size={14}/></button></div>
         </header>
         <main>{children}</main>
       </div>

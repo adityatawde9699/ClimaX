@@ -54,7 +54,8 @@ REQUIRED_DIRECTORIES = [
 
 REQUIRED_FILES = [
     "README.md",
-    ".env.example",
+    "apps/api/.env.example",
+    "apps/web/.env.example",
     ".gitignore",
     "package.json",
     "pyproject.toml",

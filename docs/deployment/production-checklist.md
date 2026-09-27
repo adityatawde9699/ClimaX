@@ -6,6 +6,9 @@ ClimaX deliberately refuses to start in `production` when development security d
 
 Set these values through the deployment platform or Secret Manager:
 
+Use `apps/api/.env.example` for the API settings and `apps/web/.env.example`
+for public frontend build settings.
+
 - `ENVIRONMENT=production`
 - `DEBUG=false`
 - `ENABLE_API_DOCS=false`
@@ -19,6 +22,21 @@ Set these values through the deployment platform or Secret Manager:
 - `RISK_AUTO_INCIDENT_ORGANIZATION_ID` to the authority organization that owns automatically created incidents
 - `PREDICTION_CACHE_TTL_SECONDS=3600` and `RISK_CACHE_TTL_SECONDS=900`
 - `MAX_REPORT_UPLOAD_BYTES` and `GCS_BUCKET`; configure bucket CORS to allow the deployed web origin to `PUT` the accepted media types
+
+Build the web image from the repository root with the public API URL for this
+environment. Next.js embeds `NEXT_PUBLIC_*` values in browser JavaScript during
+the build, so changing Cloud Run environment variables afterward will not update
+the browser's API URL. Set the Google client ID at build time if enabling Google
+login.
+
+```bash
+docker build -f infrastructure/docker/Dockerfile.web \
+  --build-arg NEXT_PUBLIC_API_URL=https://api.example.com/api/v1 \
+  --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com \
+  -t climax-web:production .
+```
+
+The Docker Compose file is for local development; it uses local database credentials.
 
 ## Release verification
 

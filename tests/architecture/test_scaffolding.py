@@ -35,14 +35,14 @@ class TestArchitectureScaffolding(unittest.TestCase):
 
     def test_no_hardcoded_secrets_in_env_example(self):
         root = Path(__file__).parent.parent.parent
-        env_example = root / ".env.example"
-        self.assertTrue(env_example.exists())
-        content = env_example.read_text()
-
         # Verify no real credentials
         forbidden_tokens = ["AIza" + "Sy", "gh" + "p_", "s" + "k-", "xox" + "b-"]
-        for token in forbidden_tokens:
-            self.assertNotIn(token, content, "Potentially live credential detected in .env.example")
+        for app in ("api", "web"):
+            env_example = root / "apps" / app / ".env.example"
+            self.assertTrue(env_example.exists())
+            content = env_example.read_text()
+            for token in forbidden_tokens:
+                self.assertNotIn(token, content, f"Potentially live credential detected in {env_example}")
 
 
 if __name__ == "__main__":
